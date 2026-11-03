@@ -329,3 +329,20 @@ textarea { resize: vertical; }
 
 /* Eyebrow labels on dark bands keep the bright gold */
 .hero .eyebrow, .section-dark .eyebrow { color: var(--gold-2); }
+
+/* Service address: location + Google Maps */
+.loc-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.loc-btn {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  font: 500 .875rem/1 var(--sans); color: var(--ink);
+  padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+}
+.loc-btn:hover:not(:disabled) { border-color: var(--gold); }
+.loc-btn:disabled { opacity: .6; cursor: progress; }
+.loc-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.field-help { font-size: .8rem; color: var(--muted); margin: 8px 0 0; }
+.loc-status { font-size: .85rem; color: var(--ink); margin: 8px 0 0; }
+.loc-status.is-error { color: var(--danger); }
+.loc-map { margin-top: 10px; }
+.loc-map iframe { display: block; width: 100%; height: 220px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+.loc-map a { display: inline-block; margin-top: 6px; font-size: .85rem; font-weight: 600; color: var(--ink); }

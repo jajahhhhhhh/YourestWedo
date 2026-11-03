@@ -202,6 +202,83 @@
     else target.removeAttribute("aria-invalid");
   }
 
+  // Service address: current location and Google Maps
+  var locUse = document.getElementById("loc-use");
+  var locFind = document.getElementById("loc-find");
+  var locStatus = document.getElementById("loc-status");
+  var locMap = document.getElementById("loc-map");
+  var locFrame = document.getElementById("loc-frame");
+  var locLink = document.getElementById("loc-link");
+
+  function mapLinkFor(address, lat, lng) {
+    var q = lat && lng ? lat + "," + lng : address;
+    return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+  }
+
+  function setLocStatus(text, isError) {
+    locStatus.textContent = text;
+    locStatus.hidden = !text;
+    locStatus.classList.toggle("is-error", !!isError);
+  }
+
+  function showMap(address, lat, lng) {
+    var q = lat && lng ? lat + "," + lng : address;
+    locFrame.src = "https://maps.google.com/maps?q=" + encodeURIComponent(q) + "&z=16&output=embed";
+    locLink.href = mapLinkFor(address, lat, lng);
+    locMap.hidden = false;
+  }
+
+  function clearPin() {
+    form.elements.lat.value = "";
+    form.elements.lng.value = "";
+  }
+
+  function resetLocation() {
+    clearPin();
+    setLocStatus("");
+    locMap.hidden = true;
+    locFrame.removeAttribute("src");
+  }
+
+  if (locUse) {
+    locUse.addEventListener("click", function () {
+      if (!("geolocation" in navigator)) {
+        setLocStatus("Your browser can't share location. Please type your address instead.", true);
+        return;
+      }
+      locUse.disabled = true;
+      setLocStatus("Finding your location…");
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        locUse.disabled = false;
+        var lat = pos.coords.latitude.toFixed(6);
+        var lng = pos.coords.longitude.toFixed(6);
+        form.elements.lat.value = lat;
+        form.elements.lng.value = lng;
+        showMap(form.elements.address.value.trim(), lat, lng);
+        setLocStatus("Location pinned (accurate to about " + Math.round(pos.coords.accuracy) + " m). Add your house number, building or floor above if needed.");
+        if (form.querySelector('[data-error-for="address"]:not([hidden])')) validate();
+      }, function (err) {
+        locUse.disabled = false;
+        var msg = err.code === 1
+          ? "Location access was blocked. Allow location for this site in your browser settings, or type your address instead."
+          : "We couldn't get your location. Please try again or type your address instead.";
+        setLocStatus(msg, true);
+      }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+    });
+
+    locFind.addEventListener("click", function () {
+      var address = form.elements.address.value.trim();
+      var lat = form.elements.lat.value, lng = form.elements.lng.value;
+      if (!address && !(lat && lng)) {
+        setLocStatus("Type your address first, or use your current location.", true);
+        form.elements.address.focus();
+        return;
+      }
+      setLocStatus("");
+      showMap(address, lat, lng);
+    });
+  }
+
   function validate() {
     var errors = [];
     var services = Array.prototype.filter.call(
@@ -213,6 +290,8 @@
     var phone = form.elements.phone.value.trim();
     var email = form.elements.email.value.trim();
     var address = form.elements.address.value.trim();
+    var lat = form.elements.lat.value;
+    var lng = form.elements.lng.value;
     var date = form.elements.date.value;
 
     var checks = {
@@ -220,7 +299,7 @@
       name: name.length > 1,
       phone: /^\+?[\d\s\-().]+$/.test(phone) && phone.replace(/\D/g, "").length >= 9,
       email: email === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
-      address: address.length > 3,
+      address: address.length > 3 || (lat !== "" && lng !== ""),
       date: date !== "" && date >= todayISO()
     };
 
@@ -250,7 +329,10 @@
         name: name,
         phone: phone,
         email: email,
-        address: address,
+        address: address || "Current location (pinned on map)",
+        lat: lat,
+        lng: lng,
+        mapUrl: mapLinkFor(address, lat, lng),
         date: date,
         time: form.elements.time.value,
         notes: form.elements.notes.value.trim()
@@ -265,6 +347,7 @@
       ["Phone", data.phone],
       ["Email", data.email || "—"],
       ["Address", data.address],
+      ["Map", data.mapUrl],
       ["Date", data.date],
       ["Time", data.time || "Any time"],
       ["Details", data.notes || "—"]
@@ -274,7 +357,16 @@
       var dt = document.createElement("dt");
       var dd = document.createElement("dd");
       dt.textContent = r[0];
-      dd.textContent = r[1];
+      if (r[0] === "Map") {
+        var a = document.createElement("a");
+        a.href = r[1];
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.textContent = "Open in Google Maps ↗";
+        dd.appendChild(a);
+      } else {
+        dd.textContent = r[1];
+      }
       summary.appendChild(dt);
       summary.appendChild(dd);
     });
@@ -320,6 +412,7 @@
 
   again.addEventListener("click", function () {
     form.reset();
+    if (locUse) resetLocation();
     dateInput.min = todayISO();
     preselectPageService();
     success.hidden = true;
