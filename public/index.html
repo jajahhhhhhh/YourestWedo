@@ -3,36 +3,361 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>YourestWedo – Chowrest</title>
-  <meta name="description" content="Premium at-home services: cleaning, chauffeur, car washing, and grocery shopping and delivery.">
-  <style>
-    :root { --bg:#faf8f4; --fg:#1f2a2e; --muted:#5b676b; --accent:#2f7d6d; --card:#fff; }
-    @media (prefers-color-scheme: dark) { :root { --bg:#121718; --fg:#e8eeee; --muted:#9aa7aa; --accent:#5cc0a9; --card:#1b2224; } }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--fg); line-height:1.6; }
-    main { max-width: 960px; margin: 0 auto; padding: 64px 16px; }
-    h1 { font-size: clamp(2rem, 6vw, 3.25rem); margin: 0 0 .25em; }
-    .tag { color: var(--accent); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: .85rem; }
-    p.lead { font-size: 1.15rem; color: var(--muted); max-width: 62ch; }
-    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-top: 40px; }
-    .card { background:var(--card); border-radius:12px; padding:20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-    .card h2 { font-size: 1.1rem; margin: 0 0 .4em; }
-    .card p { margin:0; color: var(--muted); font-size: .95rem; }
-    footer { margin-top: 64px; color: var(--muted); font-size: .9rem; }
-  </style>
+  <title>YourestWedo — Premium Home Services</title>
+  <meta name="description" content="YourestWedo Co.,Ltd. — premium cleaning, chauffeur, at-home car washing, and grocery shopping & delivery. Rest in comfort while we do the rest.">
+  <meta name="theme-color" content="#0f2a2a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f2a2a'/%3E%3Ctext x='32' y='43' font-family='Georgia,serif' font-size='30' text-anchor='middle' fill='%23d8b56a'%3EYW%3C/text%3E%3C/svg%3E">
 </head>
 <body>
-  <main>
-    <div class="tag">Chowrest</div>
-    <h1>YourestWedo</h1>
-    <p class="lead">Premium at-home services. No need to leave your house or face the hot sun, bad weather, traffic or long distances. We're here so you can rest and stay comfortable.</p>
-    <section class="grid">
-      <div class="card"><h2>Cleaning</h2><p>Your home cleaned, top to bottom.</p></div>
-      <div class="card"><h2>Chauffeur</h2><p>A professional driver when you need one.</p></div>
-      <div class="card"><h2>Car washing</h2><p>Your car washed at your home.</p></div>
-      <div class="card"><h2>Groceries</h2><p>We do the shopping and deliver it to your door.</p></div>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a class="brand" href="#top" aria-label="YourestWedo home">
+        <span class="brand-mark" aria-hidden="true">YW</span>
+        <span class="brand-text">
+          <span class="brand-name">YourestWedo</span>
+          <span class="brand-tag">CHOWREST</span>
+        </span>
+      </a>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="site-nav">
+        <span class="sr-only">Menu</span>
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      </button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <a href="#services">Services</a>
+        <a href="#how">How it works</a>
+        <a href="#calendar">Availability</a>
+        <a href="#why">Why us</a>
+        <a href="#faq">FAQ</a>
+        <a class="btn btn-small" href="#book">Book now</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow">Premium home services</p>
+          <h1>You rest.<br><em>We do.</em></h1>
+          <p class="lead">Cleaning, chauffeur, at-home car washing, and grocery delivery — handled by one trusted team, so you never have to face the hot sun, bad weather, traffic, or long distances.</p>
+          <div class="hero-actions">
+            <a class="btn btn-gold" href="#book">Request a service</a>
+            <a class="btn btn-ghost" href="#services">Explore services</a>
+          </div>
+          <ul class="hero-points">
+            <li>Vetted, uniformed staff</li>
+            <li>One concierge for everything</li>
+            <li>Scheduled around you</li>
+          </ul>
+        </div>
+        <div class="hero-card" aria-hidden="true">
+          <div class="hero-card-inner">
+            <p class="hc-label">Today, handled for you</p>
+            <ul class="hc-list">
+              <li><span class="hc-ico">✦</span><span><strong>09:00</strong> Home deep clean</span></li>
+              <li><span class="hc-ico">✦</span><span><strong>11:30</strong> Car wash in your driveway</span></li>
+              <li><span class="hc-ico">✦</span><span><strong>14:00</strong> Groceries delivered &amp; put away</span></li>
+              <li><span class="hc-ico">✦</span><span><strong>18:30</strong> Chauffeur to dinner</span></li>
+            </ul>
+            <p class="hc-foot">Your only task: relax.</p>
+          </div>
+        </div>
+      </div>
     </section>
-    <footer>&copy; YourestWedo Co., Ltd.</footer>
+
+    <!-- Services -->
+    <section class="section" id="services">
+      <div class="container">
+        <header class="section-head">
+          <p class="eyebrow">Our services</p>
+          <h2>Everything at your door</h2>
+          <p>Choose one service or combine them. Our concierge coordinates every detail.</p>
+        </header>
+        <div class="service-grid">
+          <article class="service">
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 21h16M6 21V10l6-5 6 5v11M10 21v-6h4v6"/></svg>
+            </div>
+            <h3>Home Cleaning</h3>
+            <p>Regular upkeep, deep cleans, move-in/move-out, and post-event tidy-ups by trained housekeepers who bring their own premium supplies.</p>
+            <ul class="ticks">
+              <li>Kitchens, bathrooms &amp; living areas</li>
+              <li>Laundry &amp; ironing on request</li>
+              <li>Weekly, bi-weekly or one-off</li>
+            </ul>
+            <div class="service-links"><a class="service-link" href="cleaning.html">Details →</a><a class="service-link" href="#book" data-service="cleaning">Book cleaning →</a></div>
+          </article>
+
+          <article class="service">
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M5 17h14M6 17l1.5-5h9L18 17M7.5 12 9 8h6l1.5 4"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg>
+            </div>
+            <h3>Chauffeur</h3>
+            <p>Professional, courteous drivers in your car or ours — for the commute, airport runs, events, or a full day out without the stress of traffic and parking.</p>
+            <ul class="ticks">
+              <li>Hourly, daily or per trip</li>
+              <li>Airport pick-up &amp; drop-off</li>
+              <li>Licensed &amp; background-checked</li>
+            </ul>
+            <div class="service-links"><a class="service-link" href="chauffeur.html">Details →</a><a class="service-link" href="#book" data-service="chauffeur">Book a chauffeur →</a></div>
+          </article>
+
+          <article class="service">
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 3s-4 4.5-4 7.5a4 4 0 0 0 8 0C16 7.5 12 3 12 3z"/><path d="M4 21h16"/></svg>
+            </div>
+            <h3>Car Wash at Home</h3>
+            <p>We come to your driveway or condo parking with water-saving equipment. Your car shines without you ever leaving the house.</p>
+            <ul class="ticks">
+              <li>Exterior wash &amp; interior vacuum</li>
+              <li>Wax, polish &amp; detailing</li>
+              <li>Eco-friendly products</li>
+            </ul>
+            <div class="service-links"><a class="service-link" href="carwash.html">Details →</a><a class="service-link" href="#book" data-service="carwash">Book a car wash →</a></div>
+          </article>
+
+          <article class="service">
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h11L21 7H6.2"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/></svg>
+            </div>
+            <h3>Grocery Shopping &amp; Delivery</h3>
+            <p>Send us your list. A personal shopper picks the freshest items, delivers them to your door, and can even put them away for you.</p>
+            <ul class="ticks">
+              <li>Supermarkets, fresh markets &amp; specialty stores</li>
+              <li>Substitutions confirmed with you</li>
+              <li>Same-day delivery windows</li>
+            </ul>
+            <div class="service-links"><a class="service-link" href="grocery.html">Details →</a><a class="service-link" href="#book" data-service="grocery">Book grocery delivery →</a></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section section-tint" id="how">
+      <div class="container">
+        <header class="section-head">
+          <p class="eyebrow">How it works</p>
+          <h2>Three steps to a rested day</h2>
+        </header>
+        <ol class="steps">
+          <li>
+            <span class="step-num">1</span>
+            <h3>Tell us what you need</h3>
+            <p>Send a request online or message your concierge. Choose a service, date and time.</p>
+          </li>
+          <li>
+            <span class="step-num">2</span>
+            <h3>We confirm &amp; arrange</h3>
+            <p>We confirm details and pricing, then assign a vetted professional matched to your request.</p>
+          </li>
+          <li>
+            <span class="step-num">3</span>
+            <h3>You rest in comfort</h3>
+            <p>Our team arrives on time and gets it done. You stay home — cool, dry and relaxed.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Why us -->
+    <section class="section" id="why">
+      <div class="container why-inner">
+        <div class="why-copy">
+          <p class="eyebrow">Why YourestWedo</p>
+          <h2>We're CHOWREST.<br>We serve you to feel rested.</h2>
+          <p>Our name says it plainly: <strong>you rest, we do</strong>. We built YourestWedo for people who value their time and comfort — so the errands that drain your day are handled with care, discretion and premium standards.</p>
+        </div>
+        <ul class="why-grid">
+          <li><h3>Trusted people</h3><p>Every team member is interviewed, background-checked and trained to our standards.</p></li>
+          <li><h3>One point of contact</h3><p>A dedicated concierge coordinates all your services — no juggling apps or providers.</p></li>
+          <li><h3>On your schedule</h3><p>Book ahead or set recurring visits. We work around your routine, not the other way round.</p></li>
+          <li><h3>Rain or shine</h3><p>Heat, storms and traffic are our problem. You stay comfortable at home.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Cleaning availability -->
+    <section class="section section-tint" id="calendar">
+      <div class="container">
+        <header class="section-head">
+          <p class="eyebrow">Availability</p>
+          <h2>Check availability by service</h2>
+          <p>Each service has its own calendar. Booked days are already reserved for that service. Pick an open day to start your request.</p>
+        </header>
+        <div class="cal" id="cal">
+          <div class="cal-tabs" role="tablist" aria-label="Choose a service">
+            <button type="button" role="tab" class="cal-tab" data-cal-service="cleaning" aria-selected="true">Home cleaning</button>
+            <button type="button" role="tab" class="cal-tab" data-cal-service="chauffeur" aria-selected="false">Chauffeur</button>
+            <button type="button" role="tab" class="cal-tab" data-cal-service="carwash" aria-selected="false">Car wash</button>
+            <button type="button" role="tab" class="cal-tab" data-cal-service="grocery" aria-selected="false">Grocery delivery</button>
+          </div>
+          <div class="cal-bar">
+            <button class="cal-nav" type="button" id="cal-prev" aria-label="Previous month">‹</button>
+            <h3 class="cal-title" id="cal-title" aria-live="polite">November 2026</h3>
+            <button class="cal-nav" type="button" id="cal-next" aria-label="Next month">›</button>
+          </div>
+          <div class="cal-grid cal-dow" aria-hidden="true">
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+          </div>
+          <div class="cal-grid" id="cal-days" role="group" aria-labelledby="cal-title"></div>
+          <ul class="cal-legend">
+            <li><span class="dot dot-open"></span>Open — tap to book</li>
+            <li><span class="dot dot-booked"></span>Booked</li>
+            <li><span class="dot dot-past"></span>Past</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Booking -->
+    <section class="section section-dark" id="book">
+      <div class="container book-inner">
+        <div class="book-copy">
+          <p class="eyebrow">Book a service</p>
+          <h2>Let us take it from here</h2>
+          <p>Send a request and our concierge will contact you to confirm the details and price. No payment is taken online.</p>
+          <ul class="book-points">
+            <li>Reply within business hours</li>
+            <li>Free changes before confirmation</li>
+            <li>Combine services in one visit</li>
+          </ul>
+        </div>
+
+        <form class="book-form" id="book-form" novalidate>
+          <fieldset id="service-group">
+            <legend>Services <span class="req" aria-hidden="true">*</span></legend>
+            <div class="chips">
+              <label class="chip"><input type="checkbox" name="service" value="cleaning"><span>Home cleaning</span></label>
+              <label class="chip"><input type="checkbox" name="service" value="chauffeur"><span>Chauffeur</span></label>
+              <label class="chip"><input type="checkbox" name="service" value="carwash"><span>Car wash at home</span></label>
+              <label class="chip"><input type="checkbox" name="service" value="grocery"><span>Grocery delivery</span></label>
+            </div>
+            <p class="field-error" id="err-service" data-error-for="service" hidden>Please choose at least one service.</p>
+          </fieldset>
+
+          <div class="row">
+            <div class="field">
+              <label for="name">Full name <span class="req" aria-hidden="true">*</span></label>
+              <input id="name" name="name" type="text" autocomplete="name" required>
+              <p class="field-error" id="err-name" data-error-for="name" hidden>Please enter your name.</p>
+            </div>
+            <div class="field">
+              <label for="phone">Phone <span class="req" aria-hidden="true">*</span></label>
+              <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required>
+              <p class="field-error" id="err-phone" data-error-for="phone" hidden>Please enter a valid phone number.</p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email">
+            <p class="field-error" id="err-email" data-error-for="email" hidden>Please enter a valid email address.</p>
+          </div>
+
+          <div class="field">
+            <label for="address">Service address <span class="req" aria-hidden="true">*</span></label>
+            <input id="address" name="address" type="text" autocomplete="street-address" required>
+            <p class="field-error" id="err-address" data-error-for="address" hidden>Please enter the address.</p>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="date">Preferred date <span class="req" aria-hidden="true">*</span></label>
+              <input id="date" name="date" type="date" required>
+              <p class="field-error" id="err-date" data-error-for="date" hidden>Please choose a date from today onward.</p>
+              <p class="field-error" id="err-date-booked" data-error-for="date-booked" hidden>This day is fully booked. Please choose another date.</p>
+            </div>
+            <div class="field">
+              <label for="time">Preferred time</label>
+              <select id="time" name="time">
+                <option value="">Any time</option>
+                <option>Morning (08:00–12:00)</option>
+                <option>Afternoon (12:00–16:00)</option>
+                <option>Evening (16:00–20:00)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="notes">Details</label>
+            <textarea id="notes" name="notes" rows="3" placeholder="E.g. 3-bedroom condo, pick-up from the airport at 10:15, grocery list…"></textarea>
+          </div>
+
+          <button class="btn btn-gold btn-block" type="submit">Send request</button>
+          <p class="form-note">By sending, you agree to be contacted about this request.</p>
+        </form>
+
+        <div class="book-success" id="book-success" hidden tabindex="-1">
+          <h3>Thank you — request received.</h3>
+          <p>Here's a summary of what you sent. Our concierge will contact you to confirm.</p>
+          <dl id="book-summary"></dl>
+          <button class="btn btn-ghost-light" type="button" id="book-again">Make another request</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="faq">
+      <div class="container narrow">
+        <header class="section-head">
+          <p class="eyebrow">FAQ</p>
+          <h2>Good to know</h2>
+        </header>
+        <div class="faq">
+          <details>
+            <summary>Which areas do you serve?</summary>
+            <p>We currently serve selected city and suburban areas. Send a request with your address and we'll confirm coverage right away.</p>
+          </details>
+          <details>
+            <summary>How is pricing calculated?</summary>
+            <p>Pricing depends on the service, size of the job and duration. We confirm an exact price with you before anything is scheduled.</p>
+          </details>
+          <details>
+            <summary>Can I combine several services on the same day?</summary>
+            <p>Yes. Pick as many services as you like in one request — your concierge will coordinate the timing.</p>
+          </details>
+          <details>
+            <summary>Do I need to be home during the service?</summary>
+            <p>Not always. For cleaning, car washing and grocery put-away, we can arrange secure access with you in advance.</p>
+          </details>
+          <details>
+            <summary>Can I set up recurring bookings?</summary>
+            <p>Absolutely. Weekly or bi-weekly cleaning, regular grocery runs and standing chauffeur schedules are all available.</p>
+          </details>
+        </div>
+      </div>
+    </section>
   </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>
+        <a class="brand brand-footer" href="#top">
+          <span class="brand-mark" aria-hidden="true">YW</span>
+          <span class="brand-text">
+            <span class="brand-name">YourestWedo Co.,Ltd.</span>
+            <span class="brand-tag">CHOWREST — rest in peace &amp; comfort</span>
+          </span>
+        </a>
+      </div>
+      <nav class="footer-nav" aria-label="Footer">
+        <a href="#services">Services</a>
+        <a href="#how">How it works</a>
+        <a href="#book">Book</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <p class="copyright">© <span id="year">2026</span> YourestWedo Co.,Ltd. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
 </body>
 </html>
