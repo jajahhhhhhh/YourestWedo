@@ -32,15 +32,15 @@ Any static host works (GitHub Pages, Vercel, Netlify, Cloudflare Pages). There i
 
 ### Service subdomains
 
-On Vercel, `vercel.json` maps each subdomain of `chowrest-property.com` to its service page:
+On Vercel, `vercel.json` maps each subdomain of `chowrestproperty.com` to its service page:
 
 | Subdomain | Page |
 | --- | --- |
-| `chowrest-property.com` (and `www.`) | `index.html` (main Chowrest page) |
-| `cleaning.chowrest-property.com` | `cleaning.html` |
-| `chauffeur.chowrest-property.com` | `chauffeur.html` |
-| `carwash.chowrest-property.com` | `carwash.html` |
-| `grocery.chowrest-property.com` | `grocery.html` |
+| `chowrestproperty.com` (and `www.`) | `index.html` (main Chowrest page) |
+| `cleaning.chowrestproperty.com` | `cleaning.html` |
+| `chauffeur.chowrestproperty.com` | `chauffeur.html` |
+| `carwash.chowrestproperty.com` | `carwash.html` |
+| `grocery.chowrestproperty.com` | `grocery.html` |
 
 To turn them on: import this repo as a Vercel project, add the domain and the four subdomains under Project → Settings → Domains, and create the DNS records Vercel shows at your domain registrar. On any other host, the pages are also reachable as `/cleaning`, `/chauffeur`, `/carwash` and `/grocery`.
 
