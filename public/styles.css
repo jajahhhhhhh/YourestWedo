@@ -8,6 +8,7 @@
   --tint: #f2ece0;
   --gold: #c9a14a;
   --gold-2: #d8b56a;
+  --gold-text: #7d5f1c; /* gold for text on light backgrounds (5:1+) */
   --line: #e4dccb;
   --danger: #b3261e;
   --radius: 16px;
@@ -49,7 +50,7 @@ p { margin: 0 0 1em; }
 
 .eyebrow {
   font-size: .78rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
-  color: var(--gold); margin-bottom: .75rem;
+  color: var(--gold-text); margin-bottom: .75rem;
 }
 
 /* Buttons */
@@ -163,7 +164,7 @@ p { margin: 0 0 1em; }
 .ticks li { padding: 4px 0 4px 22px; position: relative; }
 .ticks li::before { content: ""; position: absolute; left: 2px; top: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
 .service-link { margin-top: auto; font-weight: 600; color: var(--ink); text-decoration: none; }
-.service-link:hover { color: var(--gold); }
+.service-link:hover { color: var(--gold-text); }
 
 /* Steps */
 .steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; counter-reset: none; }
@@ -171,7 +172,7 @@ p { margin: 0 0 1em; }
 .steps p { color: var(--muted); margin: 0; }
 .step-num {
   display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
-  border: 1px solid var(--gold); color: var(--gold); font: 600 1.3rem/1 var(--serif); margin-bottom: 16px;
+  border: 1px solid var(--gold); color: var(--gold-text); font: 600 1.3rem/1 var(--serif); margin-bottom: 16px;
 }
 @media (max-width: 820px) { .steps { grid-template-columns: 1fr; } }
 
@@ -208,7 +209,7 @@ p { margin: 0 0 1em; }
 
 fieldset { border: 0; padding: 0; margin: 0 0 18px; }
 legend, label { display: block; font-size: .875rem; font-weight: 600; color: var(--ink); margin-bottom: 8px; padding: 0; }
-.req { color: var(--gold); }
+.req { color: var(--gold-text); }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 560px) { .row { grid-template-columns: 1fr; gap: 0; } }
 .field { margin-bottom: 18px; }
@@ -325,3 +326,6 @@ textarea { resize: vertical; }
 .sub-others { font-size: .88rem; color: var(--muted); margin: 0; padding-top: 16px; border-top: 1px solid var(--line); }
 .sub-others a { color: var(--ink); font-weight: 600; }
 @media (max-width: 820px) { .sub-detail { grid-template-columns: 1fr; gap: 28px; } }
+
+/* Eyebrow labels on dark bands keep the bright gold */
+.hero .eyebrow, .section-dark .eyebrow { color: var(--gold-2); }

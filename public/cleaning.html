@@ -96,7 +96,7 @@
           <div class="cal-grid cal-dow" aria-hidden="true">
             <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
           </div>
-          <div class="cal-grid" id="cal-days" role="grid" aria-labelledby="cal-title"></div>
+          <div class="cal-grid" id="cal-days" role="group" aria-labelledby="cal-title"></div>
           <ul class="cal-legend">
             <li><span class="dot dot-open"></span>Open — tap to book</li>
             <li><span class="dot dot-booked"></span>Booked</li>
@@ -121,7 +121,7 @@
         </div>
 
         <form class="book-form" id="book-form" novalidate>
-          <fieldset>
+          <fieldset id="service-group">
             <legend>Services <span class="req" aria-hidden="true">*</span></legend>
             <div class="chips">
               <label class="chip"><input type="checkbox" name="service" value="cleaning"><span>Home cleaning</span></label>
@@ -129,40 +129,40 @@
               <label class="chip"><input type="checkbox" name="service" value="carwash"><span>Car wash at home</span></label>
               <label class="chip"><input type="checkbox" name="service" value="grocery"><span>Grocery delivery</span></label>
             </div>
-            <p class="field-error" data-error-for="service" hidden>Please choose at least one service.</p>
+            <p class="field-error" id="err-service" data-error-for="service" hidden>Please choose at least one service.</p>
           </fieldset>
 
           <div class="row">
             <div class="field">
               <label for="name">Full name <span class="req" aria-hidden="true">*</span></label>
               <input id="name" name="name" type="text" autocomplete="name" required>
-              <p class="field-error" data-error-for="name" hidden>Please enter your name.</p>
+              <p class="field-error" id="err-name" data-error-for="name" hidden>Please enter your name.</p>
             </div>
             <div class="field">
               <label for="phone">Phone <span class="req" aria-hidden="true">*</span></label>
               <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required>
-              <p class="field-error" data-error-for="phone" hidden>Please enter a valid phone number.</p>
+              <p class="field-error" id="err-phone" data-error-for="phone" hidden>Please enter a valid phone number.</p>
             </div>
           </div>
 
           <div class="field">
             <label for="email">Email</label>
             <input id="email" name="email" type="email" autocomplete="email">
-            <p class="field-error" data-error-for="email" hidden>Please enter a valid email address.</p>
+            <p class="field-error" id="err-email" data-error-for="email" hidden>Please enter a valid email address.</p>
           </div>
 
           <div class="field">
             <label for="address">Service address <span class="req" aria-hidden="true">*</span></label>
             <input id="address" name="address" type="text" autocomplete="street-address" required>
-            <p class="field-error" data-error-for="address" hidden>Please enter the address.</p>
+            <p class="field-error" id="err-address" data-error-for="address" hidden>Please enter the address.</p>
           </div>
 
           <div class="row">
             <div class="field">
               <label for="date">Preferred date <span class="req" aria-hidden="true">*</span></label>
               <input id="date" name="date" type="date" required>
-              <p class="field-error" data-error-for="date" hidden>Please choose a date from today onward.</p>
-              <p class="field-error" data-error-for="date-booked" hidden>This day is fully booked. Please choose another date.</p>
+              <p class="field-error" id="err-date" data-error-for="date" hidden>Please choose a date from today onward.</p>
+              <p class="field-error" id="err-date-booked" data-error-for="date-booked" hidden>This day is fully booked. Please choose another date.</p>
             </div>
             <div class="field">
               <label for="time">Preferred time</label>

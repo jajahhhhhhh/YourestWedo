@@ -15,7 +15,6 @@ This repository holds the company's website, a static, dependency-free site in `
 | `public/styles.css` | Styling (responsive, mobile-first breakpoints) |
 | `public/script.js` | Mobile menu, per-service availability calendars, booking form validation & confirmation |
 | `worker.js`, `wrangler.jsonc` | Cloudflare Worker that serves `public/` and gives each service its own subdomain |
-| `vercel.json` | The same subdomain routing, if the site is hosted on Vercel instead |
 
 ### Run locally
 

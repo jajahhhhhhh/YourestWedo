@@ -118,7 +118,7 @@
       form.querySelectorAll('input[name="service"]').forEach(function (cb) {
         if (cb.value === calService) cb.checked = true;
       });
-      document.getElementById("book").scrollIntoView({ behavior: "smooth" });
+      document.getElementById("book").scrollIntoView(); // CSS scroll-behavior decides, so reduced motion is respected
       form.elements.name.focus({ preventScroll: true });
     });
     document.querySelectorAll("[data-cal-service]").forEach(function (tab) {
@@ -175,14 +175,31 @@
     });
   });
 
+  // The control each error message describes. Two messages can describe the date.
+  function errorTarget(name) {
+    if (name === "service") return document.getElementById("service-group");
+    if (name === "date-booked") return form.elements.date;
+    return form.elements[name];
+  }
+
   function setError(name, show) {
     var msg = form.querySelector('[data-error-for="' + name + '"]');
     if (msg) msg.hidden = !show;
-    var input = form.elements[name];
-    if (input && input.setAttribute && !(input instanceof RadioNodeList)) {
-      if (show) input.setAttribute("aria-invalid", "true");
-      else input.removeAttribute("aria-invalid");
-    }
+    var target = errorTarget(name);
+    if (!target || !target.setAttribute || !msg) return;
+    var ids = (target.getAttribute("aria-describedby") || "").split(" ").filter(function (id) {
+      return id && id !== msg.id;
+    });
+    if (show) ids.push(msg.id);
+    if (ids.length) target.setAttribute("aria-describedby", ids.join(" "));
+    else target.removeAttribute("aria-describedby");
+    var invalid = show || Array.prototype.some.call(
+      form.querySelectorAll(".field-error:not([hidden])"),
+      function (m) { return errorTarget(m.getAttribute("data-error-for")) === target; }
+    );
+    if (target.tagName === "FIELDSET") return;
+    if (invalid) target.setAttribute("aria-invalid", "true");
+    else target.removeAttribute("aria-invalid");
   }
 
   function validate() {
@@ -201,7 +218,7 @@
     var checks = {
       service: services.length > 0,
       name: name.length > 1,
-      phone: /^[+\d][\d\s\-()]{7,}$/.test(phone),
+      phone: /^\+?[\d\s\-().]+$/.test(phone) && phone.replace(/\D/g, "").length >= 9,
       email: email === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
       address: address.length > 3,
       date: date !== "" && date >= todayISO()
