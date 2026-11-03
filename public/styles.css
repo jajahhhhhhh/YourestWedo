@@ -346,3 +346,7 @@ textarea { resize: vertical; }
 .loc-map { margin-top: 10px; }
 .loc-map iframe { display: block; width: 100%; height: 220px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
 .loc-map a { display: inline-block; margin-top: 6px; font-size: .85rem; font-weight: 600; color: var(--ink); }
+
+/* Booking form: spam trap and send status */
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.form-status { color: var(--danger); font-size: .9rem; margin: 0 0 12px; }
