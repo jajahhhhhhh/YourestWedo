@@ -1,2 +1,2 @@
 # YourestWedo
-YourestWedo Co.,Ltd. is a premium service. Offer a full of services cleaning services, chauffeur services, car washing at your home, and grocery shopping and delivery, all without you having to leave your house and face the hot sun, bad weather, traffic, or long distances. We're CHOWREST we serve your to feel rested in peace and most comfortable.
+YourestWedo Co., Ltd. is a premium home-services company offering cleaning, chauffeur services, at-home car washing, and grocery shopping and delivery. We bring these services to you, so you can avoid the hot sun, bad weather, traffic, and long trips. We're CHOWREST, here to help you feel rested, at peace, and comfortable.
