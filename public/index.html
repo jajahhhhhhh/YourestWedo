@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YourestWedo – Chowrest</title>
+  <meta name="description" content="Premium at-home services: cleaning, chauffeur, car washing, and grocery shopping and delivery.">
+  <style>
+    :root { --bg:#faf8f4; --fg:#1f2a2e; --muted:#5b676b; --accent:#2f7d6d; --card:#fff; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#121718; --fg:#e8eeee; --muted:#9aa7aa; --accent:#5cc0a9; --card:#1b2224; } }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--fg); line-height:1.6; }
+    main { max-width: 960px; margin: 0 auto; padding: 64px 16px; }
+    h1 { font-size: clamp(2rem, 6vw, 3.25rem); margin: 0 0 .25em; }
+    .tag { color: var(--accent); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: .85rem; }
+    p.lead { font-size: 1.15rem; color: var(--muted); max-width: 62ch; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-top: 40px; }
+    .card { background:var(--card); border-radius:12px; padding:20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .card h2 { font-size: 1.1rem; margin: 0 0 .4em; }
+    .card p { margin:0; color: var(--muted); font-size: .95rem; }
+    footer { margin-top: 64px; color: var(--muted); font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="tag">Chowrest</div>
+    <h1>YourestWedo</h1>
+    <p class="lead">Premium at-home services. No need to leave your house or face the hot sun, bad weather, traffic or long distances. We're here so you can rest and stay comfortable.</p>
+    <section class="grid">
+      <div class="card"><h2>Cleaning</h2><p>Your home cleaned, top to bottom.</p></div>
+      <div class="card"><h2>Chauffeur</h2><p>A professional driver when you need one.</p></div>
+      <div class="card"><h2>Car washing</h2><p>Your car washed at your home.</p></div>
+      <div class="card"><h2>Groceries</h2><p>We do the shopping and deliver it to your door.</p></div>
+    </section>
+    <footer>&copy; YourestWedo Co., Ltd.</footer>
+  </main>
+</body>
+</html>
