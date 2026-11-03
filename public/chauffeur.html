@@ -152,8 +152,26 @@
 
           <div class="field">
             <label for="address">Service address <span class="req" aria-hidden="true">*</span></label>
-            <input id="address" name="address" type="text" autocomplete="street-address" required>
-            <p class="field-error" id="err-address" data-error-for="address" hidden>Please enter the address.</p>
+            <input id="address" name="address" type="text" autocomplete="street-address" required aria-describedby="address-help">
+            <div class="loc-actions">
+              <button type="button" class="loc-btn" id="loc-use">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>
+                Use my current location
+              </button>
+              <button type="button" class="loc-btn" id="loc-find">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.3-6-11a6 6 0 0 1 12 0c0 5.7-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>
+                Show on Google Maps
+              </button>
+            </div>
+            <p class="field-help" id="address-help">Type your address, or share your location so our team can find you easily.</p>
+            <p class="loc-status" id="loc-status" role="status" aria-live="polite" hidden></p>
+            <div class="loc-map" id="loc-map" hidden>
+              <iframe id="loc-frame" title="Map of the service address" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+              <a id="loc-link" href="#" target="_blank" rel="noopener">Open in Google Maps ↗</a>
+            </div>
+            <input type="hidden" id="lat" name="lat">
+            <input type="hidden" id="lng" name="lng">
+            <p class="field-error" id="err-address" data-error-for="address" hidden>Please enter the address or use your current location.</p>
           </div>
 
           <div class="row">
