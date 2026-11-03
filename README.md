@@ -6,34 +6,30 @@ We're **CHOWREST**: we serve you so you feel rested, at peace and comfortable.
 
 ## Website
 
-This repository holds the company's marketing website, a static, dependency-free site:
+This repository holds the company's website, a static, dependency-free site in `public/`:
 
 | File | Purpose |
 | --- | --- |
-| `index.html` | Single-page site: hero, services, how it works, why us, booking form, FAQ |
-| `styles.css` | Styling (responsive, mobile-first breakpoints) |
-| `cleaning.html`, `chauffeur.html`, `carwash.html`, `grocery.html` | One page per service: details, that service's availability calendar, and a booking form with the service preselected |
-| `script.js` | Mobile menu, per-service availability calendars, booking form validation & confirmation |
-| `functions/_middleware.js` | Cloudflare Pages: serves each service page on its own subdomain (see below) |
-| `vercel.json` | The same subdomain routing, for Vercel |
+| `public/index.html` | Main Chowrest page: hero, services, how it works, availability, why us, booking form, FAQ |
+| `public/cleaning.html`, `chauffeur.html`, `carwash.html`, `grocery.html` | One page per service: details, that service's availability calendar, and a booking form with the service preselected |
+| `public/styles.css` | Styling (responsive, mobile-first breakpoints) |
+| `public/script.js` | Mobile menu, per-service availability calendars, booking form validation & confirmation |
+| `worker.js`, `wrangler.jsonc` | Cloudflare Worker that serves `public/` and gives each service its own subdomain |
+| `vercel.json` | The same subdomain routing, if the site is hosted on Vercel instead |
 
 ### Run locally
 
-Open `index.html` in a browser, or serve the folder:
+Open `public/index.html` in a browser, or serve the folder:
 
 ```bash
-python3 -m http.server 8000
+python3 -m http.server 8000 --directory public
 ```
 
 Then visit http://localhost:8000.
 
-### Deploy
-
-Any static host works (GitHub Pages, Vercel, Netlify, Cloudflare Pages). There is no build step.
-
 ### Service subdomains
 
-Each service has its own subdomain of `chowrest-property.com` (the domain is on Cloudflare):
+Each service has its own subdomain of `chowrest-property.com`:
 
 | Address | Page |
 | --- | --- |
@@ -45,13 +41,17 @@ Each service has its own subdomain of `chowrest-property.com` (the domain is on 
 
 On a service subdomain, links to another service go to that service's subdomain, and links to the main page go to `chowrest-property.com`.
 
-**Cloudflare Pages (recommended, the domain is already on Cloudflare).** Routing is handled by `functions/_middleware.js`.
+### Deploy on Cloudflare Workers
 
-1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git** → choose `jajahhhhhhh/YourestWedo`.
-2. Framework preset: **None**. Build command: leave empty. Build output directory: `/`. Production branch: `main`.
-3. After the first deploy, open the project → **Custom domains** and add `chowrest-property.com`, `cleaning.chowrest-property.com`, `chauffeur.chowrest-property.com`, `carwash.chowrest-property.com` and `grocery.chowrest-property.com`. Cloudflare creates the DNS records automatically.
+The domain is on Cloudflare and the site deploys as the `yourestwedo` Worker (`wrangler.jsonc`). Cloudflare builds it from the `main` branch with deploy command `npx wrangler deploy` and no build command.
 
-**Vercel (alternative).** `vercel.json` does the same routing. Add the five addresses under Project → Settings → Domains and create the DNS records Vercel shows in Cloudflare (set them to "DNS only", grey cloud).
+After the first successful deploy, open the Worker → **Settings** → **Domains & Routes** → **Add** → **Custom domain**, and add each of the five addresses above. Cloudflare creates the DNS records itself.
+
+To test the routing locally:
+
+```bash
+npx wrangler dev
+```
 
 ## Before going live
 
