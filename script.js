@@ -22,16 +22,21 @@
     });
   }
 
-  // Days already fully booked for cleaning (YYYY-MM-DD).
-  // Update this list when the cleaning schedule changes.
-  var CLEANING_BOOKED = [
-    "2026-11-01", "2026-11-02", "2026-11-06", "2026-11-07", "2026-11-09",
-    "2026-11-11", "2026-11-15", "2026-11-19", "2026-11-22", "2026-11-30",
-    "2026-12-01"
-  ];
+  // Fully booked days for each service (YYYY-MM-DD). Each service has its
+  // own calendar. Update these lists when a schedule changes.
+  var BOOKED = {
+    cleaning: [
+      "2026-11-01", "2026-11-02", "2026-11-06", "2026-11-07", "2026-11-09",
+      "2026-11-11", "2026-11-15", "2026-11-19", "2026-11-22", "2026-11-30",
+      "2026-12-01"
+    ],
+    chauffeur: [],
+    carwash: [],
+    grocery: []
+  };
 
-  function isCleaningBooked(iso) {
-    return CLEANING_BOOKED.indexOf(iso) !== -1;
+  function isBooked(service, iso) {
+    return (BOOKED[service] || []).indexOf(iso) !== -1;
   }
 
   function pad(n) { return (n < 10 ? "0" : "") + n; }
@@ -47,6 +52,11 @@
   var now = new Date();
   var view = { y: now.getFullYear(), m: now.getMonth() };
   var minView = { y: now.getFullYear(), m: now.getMonth() };
+  var calService = "cleaning";
+  var SERVICE_NAMES = {
+    cleaning: "home cleaning", chauffeur: "a chauffeur",
+    carwash: "a car wash", grocery: "grocery delivery"
+  };
 
   function renderCalendar() {
     if (!calDays) return;
@@ -69,18 +79,18 @@
         cell = document.createElement("span");
         cell.className = "cal-day is-past";
         cell.innerHTML = '<span class="cal-num">' + d + "</span>";
-      } else if (isCleaningBooked(iso)) {
+      } else if (isBooked(calService, iso)) {
         cell = document.createElement("span");
         cell.className = "cal-day is-booked";
         cell.innerHTML = '<span class="cal-num">' + d + '</span><span class="cal-tag">Booked</span>';
-        cell.setAttribute("aria-label", MONTHS[view.m] + " " + d + ", cleaning booked");
+        cell.setAttribute("aria-label", MONTHS[view.m] + " " + d + ", booked");
       } else {
         cell = document.createElement("button");
         cell.type = "button";
         cell.className = "cal-day is-open";
         cell.dataset.date = iso;
         cell.innerHTML = '<span class="cal-num">' + d + "</span>";
-        cell.setAttribute("aria-label", MONTHS[view.m] + " " + d + ", available — book cleaning");
+        cell.setAttribute("aria-label", MONTHS[view.m] + " " + d + ", available — book " + SERVICE_NAMES[calService]);
       }
       if (iso === today) cell.classList.add("is-today");
       calDays.appendChild(cell);
@@ -104,10 +114,19 @@
       showForm();
       form.elements.date.value = btn.dataset.date;
       form.querySelectorAll('input[name="service"]').forEach(function (cb) {
-        if (cb.value === "cleaning") cb.checked = true;
+        if (cb.value === calService) cb.checked = true;
       });
       document.getElementById("book").scrollIntoView({ behavior: "smooth" });
       form.elements.name.focus({ preventScroll: true });
+    });
+    document.querySelectorAll("[data-cal-service]").forEach(function (tab) {
+      tab.addEventListener("click", function () {
+        calService = tab.getAttribute("data-cal-service");
+        document.querySelectorAll("[data-cal-service]").forEach(function (t) {
+          t.setAttribute("aria-selected", String(t === tab));
+        });
+        renderCalendar();
+      });
     });
     renderCalendar();
   }
@@ -183,10 +202,15 @@
       if (!checks[key]) errors.push(key);
     });
 
-    // Cleaning can't be booked on a day that is already fully booked
-    var cleaningBlocked = checks.date && services.indexOf("cleaning") !== -1 && isCleaningBooked(date);
-    setError("date-booked", cleaningBlocked);
-    if (cleaningBlocked) {
+    // A service can't be booked on a day its calendar is already full
+    var blocked = checks.date ? services.filter(function (sv) { return isBooked(sv, date); }) : [];
+    var bookedMsg = form.querySelector('[data-error-for="date-booked"]');
+    if (bookedMsg && blocked.length) {
+      bookedMsg.textContent = blocked.map(function (sv) { return SERVICE_LABELS[sv]; }).join(", ") +
+        (blocked.length > 1 ? " are" : " is") + " fully booked on this day. Please choose another date.";
+    }
+    setError("date-booked", blocked.length > 0);
+    if (blocked.length) {
       form.elements.date.setAttribute("aria-invalid", "true");
       errors.push("date");
     }

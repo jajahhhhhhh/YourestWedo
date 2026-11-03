@@ -296,3 +296,10 @@ textarea { resize: vertical; }
   .cal-day { min-height: 48px; padding: 5px; align-items: center; justify-content: center; }
   .cal-tag { font-size: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--gold-2); margin-top: 3px; }
 }
+.cal-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.cal-tab {
+  font: 500 .9rem/1 var(--sans); padding: 10px 16px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--bg); color: var(--text);
+}
+.cal-tab:hover { border-color: var(--gold); }
+.cal-tab[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }

@@ -188,11 +188,17 @@
     <section class="section section-tint" id="calendar">
       <div class="container">
         <header class="section-head">
-          <p class="eyebrow">Cleaning calendar</p>
-          <h2>Check cleaning availability</h2>
-          <p>Days marked as booked are reserved for scheduled cleanings. Pick an open day to start your request.</p>
+          <p class="eyebrow">Availability</p>
+          <h2>Check availability by service</h2>
+          <p>Each service has its own calendar. Booked days are already reserved for that service. Pick an open day to start your request.</p>
         </header>
         <div class="cal" id="cal">
+          <div class="cal-tabs" role="tablist" aria-label="Choose a service">
+            <button type="button" role="tab" class="cal-tab" data-cal-service="cleaning" aria-selected="true">Home cleaning</button>
+            <button type="button" role="tab" class="cal-tab" data-cal-service="chauffeur" aria-selected="false">Chauffeur</button>
+            <button type="button" role="tab" class="cal-tab" data-cal-service="carwash" aria-selected="false">Car wash</button>
+            <button type="button" role="tab" class="cal-tab" data-cal-service="grocery" aria-selected="false">Grocery delivery</button>
+          </div>
           <div class="cal-bar">
             <button class="cal-nav" type="button" id="cal-prev" aria-label="Previous month">‹</button>
             <h3 class="cal-title" id="cal-title" aria-live="polite">November 2026</h3>
@@ -204,7 +210,7 @@
           <div class="cal-grid" id="cal-days" role="grid" aria-labelledby="cal-title"></div>
           <ul class="cal-legend">
             <li><span class="dot dot-open"></span>Open — tap to book</li>
-            <li><span class="dot dot-booked"></span>Cleaning booked</li>
+            <li><span class="dot dot-booked"></span>Booked</li>
             <li><span class="dot dot-past"></span>Past</li>
           </ul>
         </div>
@@ -267,7 +273,7 @@
               <label for="date">Preferred date <span class="req" aria-hidden="true">*</span></label>
               <input id="date" name="date" type="date" required>
               <p class="field-error" data-error-for="date" hidden>Please choose a date from today onward.</p>
-              <p class="field-error" data-error-for="date-booked" hidden>Cleaning is fully booked on this day. Please choose another date.</p>
+              <p class="field-error" data-error-for="date-booked" hidden>This day is fully booked. Please choose another date.</p>
             </div>
             <div class="field">
               <label for="time">Preferred time</label>
