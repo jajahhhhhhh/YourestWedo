@@ -31,6 +31,7 @@
       <nav class="site-nav" id="site-nav" aria-label="Main">
         <a href="#services">Services</a>
         <a href="#how">How it works</a>
+        <a href="#calendar">Availability</a>
         <a href="#why">Why us</a>
         <a href="#faq">FAQ</a>
         <a class="btn btn-small" href="#book">Book now</a>
@@ -183,6 +184,33 @@
       </div>
     </section>
 
+    <!-- Cleaning availability -->
+    <section class="section section-tint" id="calendar">
+      <div class="container">
+        <header class="section-head">
+          <p class="eyebrow">Cleaning calendar</p>
+          <h2>Check cleaning availability</h2>
+          <p>Days marked as booked are reserved for scheduled cleanings. Pick an open day to start your request.</p>
+        </header>
+        <div class="cal" id="cal">
+          <div class="cal-bar">
+            <button class="cal-nav" type="button" id="cal-prev" aria-label="Previous month">‹</button>
+            <h3 class="cal-title" id="cal-title" aria-live="polite">November 2026</h3>
+            <button class="cal-nav" type="button" id="cal-next" aria-label="Next month">›</button>
+          </div>
+          <div class="cal-grid cal-dow" aria-hidden="true">
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+          </div>
+          <div class="cal-grid" id="cal-days" role="grid" aria-labelledby="cal-title"></div>
+          <ul class="cal-legend">
+            <li><span class="dot dot-open"></span>Open — tap to book</li>
+            <li><span class="dot dot-booked"></span>Cleaning booked</li>
+            <li><span class="dot dot-past"></span>Past</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
     <!-- Booking -->
     <section class="section section-dark" id="book">
       <div class="container book-inner">
@@ -239,6 +267,7 @@
               <label for="date">Preferred date <span class="req" aria-hidden="true">*</span></label>
               <input id="date" name="date" type="date" required>
               <p class="field-error" data-error-for="date" hidden>Please choose a date from today onward.</p>
+              <p class="field-error" data-error-for="date-booked" hidden>Cleaning is fully booked on this day. Please choose another date.</p>
             </div>
             <div class="field">
               <label for="time">Preferred time</label>

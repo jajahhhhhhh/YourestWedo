@@ -22,6 +22,96 @@
     });
   }
 
+  // Days already fully booked for cleaning (YYYY-MM-DD).
+  // Update this list when the cleaning schedule changes.
+  var CLEANING_BOOKED = [
+    "2026-11-01", "2026-11-02", "2026-11-06", "2026-11-07", "2026-11-09",
+    "2026-11-11", "2026-11-15", "2026-11-19", "2026-11-22", "2026-11-30",
+    "2026-12-01"
+  ];
+
+  function isCleaningBooked(iso) {
+    return CLEANING_BOOKED.indexOf(iso) !== -1;
+  }
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function isoOf(y, m, d) { return y + "-" + pad(m + 1) + "-" + pad(d); }
+
+  // Availability calendar
+  var calDays = document.getElementById("cal-days");
+  var calTitle = document.getElementById("cal-title");
+  var calPrev = document.getElementById("cal-prev");
+  var calNext = document.getElementById("cal-next");
+  var MONTHS = ["January", "February", "March", "April", "May", "June", "July",
+    "August", "September", "October", "November", "December"];
+  var now = new Date();
+  var view = { y: now.getFullYear(), m: now.getMonth() };
+  var minView = { y: now.getFullYear(), m: now.getMonth() };
+
+  function renderCalendar() {
+    if (!calDays) return;
+    var today = isoOf(now.getFullYear(), now.getMonth(), now.getDate());
+    calTitle.textContent = MONTHS[view.m] + " " + view.y;
+    calPrev.disabled = view.y === minView.y && view.m === minView.m;
+    calDays.textContent = "";
+    var first = new Date(view.y, view.m, 1);
+    var lead = (first.getDay() + 6) % 7; // Monday-first
+    var count = new Date(view.y, view.m + 1, 0).getDate();
+    for (var i = 0; i < lead; i++) {
+      var blank = document.createElement("span");
+      blank.className = "cal-day cal-blank";
+      calDays.appendChild(blank);
+    }
+    for (var d = 1; d <= count; d++) {
+      var iso = isoOf(view.y, view.m, d);
+      var cell;
+      if (iso < today) {
+        cell = document.createElement("span");
+        cell.className = "cal-day is-past";
+        cell.innerHTML = '<span class="cal-num">' + d + "</span>";
+      } else if (isCleaningBooked(iso)) {
+        cell = document.createElement("span");
+        cell.className = "cal-day is-booked";
+        cell.innerHTML = '<span class="cal-num">' + d + '</span><span class="cal-tag">Booked</span>';
+        cell.setAttribute("aria-label", MONTHS[view.m] + " " + d + ", cleaning booked");
+      } else {
+        cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "cal-day is-open";
+        cell.dataset.date = iso;
+        cell.innerHTML = '<span class="cal-num">' + d + "</span>";
+        cell.setAttribute("aria-label", MONTHS[view.m] + " " + d + ", available — book cleaning");
+      }
+      if (iso === today) cell.classList.add("is-today");
+      calDays.appendChild(cell);
+    }
+  }
+
+  if (calDays) {
+    calPrev.addEventListener("click", function () {
+      view.m -= 1;
+      if (view.m < 0) { view.m = 11; view.y -= 1; }
+      renderCalendar();
+    });
+    calNext.addEventListener("click", function () {
+      view.m += 1;
+      if (view.m > 11) { view.m = 0; view.y += 1; }
+      renderCalendar();
+    });
+    calDays.addEventListener("click", function (e) {
+      var btn = e.target.closest("button.is-open");
+      if (!btn || !form) return;
+      showForm();
+      form.elements.date.value = btn.dataset.date;
+      form.querySelectorAll('input[name="service"]').forEach(function (cb) {
+        if (cb.value === "cleaning") cb.checked = true;
+      });
+      document.getElementById("book").scrollIntoView({ behavior: "smooth" });
+      form.elements.name.focus({ preventScroll: true });
+    });
+    renderCalendar();
+  }
+
   // Booking form
   var form = document.getElementById("book-form");
   var success = document.getElementById("book-success");
@@ -92,6 +182,14 @@
       setError(key, !checks[key]);
       if (!checks[key]) errors.push(key);
     });
+
+    // Cleaning can't be booked on a day that is already fully booked
+    var cleaningBlocked = checks.date && services.indexOf("cleaning") !== -1 && isCleaningBooked(date);
+    setError("date-booked", cleaningBlocked);
+    if (cleaningBlocked) {
+      form.elements.date.setAttribute("aria-invalid", "true");
+      errors.push("date");
+    }
 
     return {
       ok: errors.length === 0,
@@ -166,10 +264,7 @@
 
   // Clear an error as soon as the user fixes the field
   form.addEventListener("input", function (e) {
-    var name = e.target.name;
-    if (name && form.querySelector('[data-error-for="' + name + '"]:not([hidden])')) {
-      validate();
-    }
+    if (form.querySelector(".field-error:not([hidden])")) validate();
   });
 
   again.addEventListener("click", function () {
