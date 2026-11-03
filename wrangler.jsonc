@@ -1,12 +1,14 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "yourestwedo",
+  "account_id": "aed56ccedac8bafaa6cc2551eea1cefe",
   "main": "worker.js",
-  "compatibility_date": "2025-09-01",
+  "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
     "run_worker_first": true
   }
 }
