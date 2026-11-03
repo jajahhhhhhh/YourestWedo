@@ -52,7 +52,9 @@
   var now = new Date();
   var view = { y: now.getFullYear(), m: now.getMonth() };
   var minView = { y: now.getFullYear(), m: now.getMonth() };
-  var calService = "cleaning";
+  // A service's own page sets data-service-page on <body>
+  var pageService = document.body.getAttribute("data-service-page");
+  var calService = pageService || "cleaning";
   var SERVICE_NAMES = {
     cleaning: "home cleaning", chauffeur: "a chauffeur",
     carwash: "a car wash", grocery: "grocery delivery"
@@ -153,6 +155,14 @@
 
   var dateInput = form.elements.date;
   dateInput.min = todayISO();
+
+  function preselectPageService() {
+    if (!pageService) return;
+    form.querySelectorAll('input[name="service"]').forEach(function (cb) {
+      if (cb.value === pageService) cb.checked = true;
+    });
+  }
+  preselectPageService();
 
   // "Book X →" links on service cards preselect that service
   document.querySelectorAll("[data-service]").forEach(function (link) {
@@ -294,6 +304,7 @@
   again.addEventListener("click", function () {
     form.reset();
     dateInput.min = todayISO();
+    preselectPageService();
     success.hidden = true;
     form.hidden = false;
     form.querySelector('input[name="service"]').focus();

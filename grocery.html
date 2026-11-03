@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grocery Delivery — YourestWedo</title>
+  <meta name="description" content="Send us your list. A personal shopper picks the freshest items from your favourite stores, delivers them, and can put them away for you.">
+  <meta name="theme-color" content="#0f2a2a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f2a2a'/%3E%3Ctext x='32' y='43' font-family='Georgia,serif' font-size='30' text-anchor='middle' fill='%23d8b56a'%3EYW%3C/text%3E%3C/svg%3E">
+</head>
+<body data-service-page="grocery">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a class="brand" href="index.html" aria-label="YourestWedo home">
+        <span class="brand-mark" aria-hidden="true">YW</span>
+        <span class="brand-text">
+          <span class="brand-name">YourestWedo</span>
+          <span class="brand-tag">CHOWREST</span>
+        </span>
+      </a>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="site-nav">
+        <span class="sr-only">Menu</span>
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      </button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <a href="index.html#services">Services</a>
+        <a href="index.html#how">How it works</a>
+        <a href="index.html#calendar">Availability</a>
+        <a href="index.html#why">Why us</a>
+        <a href="index.html#faq">FAQ</a>
+        <a class="btn btn-small" href="#book">Book now</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero hero-sub">
+      <div class="container">
+        <nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Chowrest home</a> <span aria-hidden="true">/</span> <a href="index.html#services">Services</a> <span aria-hidden="true">/</span> <span aria-current="page">Grocery Shopping & Delivery</span></nav>
+        <p class="eyebrow">YourestWedo service</p>
+        <h1>Grocery Delivery</h1>
+        <p class="lead"><strong class="sub-tagline">Your list, picked fresh and brought to your door.</strong> Send us your list. A personal shopper picks the freshest items from your favourite stores, delivers them, and can put them away for you.</p>
+        <div class="hero-actions">
+          <a class="btn btn-gold" href="#book">Book grocery delivery</a>
+          <a class="btn btn-ghost" href="#calendar">See availability</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container sub-detail">
+        <div>
+          <p class="eyebrow">What's included</p>
+          <h2>Everything taken care of</h2>
+          <ul class="ticks ticks-lg">
+              <li>Supermarkets, fresh markets and specialty stores</li>
+              <li>Fresh produce chosen with care</li>
+              <li>Substitutions confirmed with you first</li>
+              <li>Same-day delivery windows</li>
+              <li>Put-away service on request</li>
+          </ul>
+        </div>
+        <aside class="sub-aside">
+          <h3>Good to know</h3>
+          <ul class="ticks">
+              <li>Add your shopping list in the details box.</li>
+              <li>We call before substituting any item.</li>
+              <li>Receipts are shared with every delivery.</li>
+          </ul>
+          <p class="sub-others">Other services: <a href="cleaning.html">Home Cleaning</a> · <a href="chauffeur.html">Chauffeur</a> · <a href="carwash.html">Car Wash at Home</a></p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Cleaning availability -->
+    <section class="section section-tint" id="calendar">
+      <div class="container">
+        <header class="section-head">
+          <p class="eyebrow">Grocery Shopping & Delivery calendar</p>
+          <h2>Check grocery delivery availability</h2>
+          <p>Booked days are already reserved for grocery shopping & delivery. Pick an open day to start your request.</p>
+        </header>
+        <div class="cal" id="cal">
+          <div class="cal-bar">
+            <button class="cal-nav" type="button" id="cal-prev" aria-label="Previous month">‹</button>
+            <h3 class="cal-title" id="cal-title" aria-live="polite">November 2026</h3>
+            <button class="cal-nav" type="button" id="cal-next" aria-label="Next month">›</button>
+          </div>
+          <div class="cal-grid cal-dow" aria-hidden="true">
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+          </div>
+          <div class="cal-grid" id="cal-days" role="grid" aria-labelledby="cal-title"></div>
+          <ul class="cal-legend">
+            <li><span class="dot dot-open"></span>Open — tap to book</li>
+            <li><span class="dot dot-booked"></span>Booked</li>
+            <li><span class="dot dot-past"></span>Past</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Booking -->
+    <section class="section section-dark" id="book">
+      <div class="container book-inner">
+        <div class="book-copy">
+          <p class="eyebrow">Book a service</p>
+          <h2>Let us take it from here</h2>
+          <p>Send a request and our concierge will contact you to confirm the details and price. No payment is taken online.</p>
+          <ul class="book-points">
+            <li>Reply within business hours</li>
+            <li>Free changes before confirmation</li>
+            <li>Combine services in one visit</li>
+          </ul>
+        </div>
+
+        <form class="book-form" id="book-form" novalidate>
+          <fieldset>
+            <legend>Services <span class="req" aria-hidden="true">*</span></legend>
+            <div class="chips">
+              <label class="chip"><input type="checkbox" name="service" value="cleaning"><span>Home cleaning</span></label>
+              <label class="chip"><input type="checkbox" name="service" value="chauffeur"><span>Chauffeur</span></label>
+              <label class="chip"><input type="checkbox" name="service" value="carwash"><span>Car wash at home</span></label>
+              <label class="chip"><input type="checkbox" name="service" value="grocery"><span>Grocery delivery</span></label>
+            </div>
+            <p class="field-error" data-error-for="service" hidden>Please choose at least one service.</p>
+          </fieldset>
+
+          <div class="row">
+            <div class="field">
+              <label for="name">Full name <span class="req" aria-hidden="true">*</span></label>
+              <input id="name" name="name" type="text" autocomplete="name" required>
+              <p class="field-error" data-error-for="name" hidden>Please enter your name.</p>
+            </div>
+            <div class="field">
+              <label for="phone">Phone <span class="req" aria-hidden="true">*</span></label>
+              <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required>
+              <p class="field-error" data-error-for="phone" hidden>Please enter a valid phone number.</p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email">
+            <p class="field-error" data-error-for="email" hidden>Please enter a valid email address.</p>
+          </div>
+
+          <div class="field">
+            <label for="address">Service address <span class="req" aria-hidden="true">*</span></label>
+            <input id="address" name="address" type="text" autocomplete="street-address" required>
+            <p class="field-error" data-error-for="address" hidden>Please enter the address.</p>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="date">Preferred date <span class="req" aria-hidden="true">*</span></label>
+              <input id="date" name="date" type="date" required>
+              <p class="field-error" data-error-for="date" hidden>Please choose a date from today onward.</p>
+              <p class="field-error" data-error-for="date-booked" hidden>This day is fully booked. Please choose another date.</p>
+            </div>
+            <div class="field">
+              <label for="time">Preferred time</label>
+              <select id="time" name="time">
+                <option value="">Any time</option>
+                <option>Morning (08:00–12:00)</option>
+                <option>Afternoon (12:00–16:00)</option>
+                <option>Evening (16:00–20:00)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="notes">Details</label>
+            <textarea id="notes" name="notes" rows="3" placeholder="E.g. 3-bedroom condo, pick-up from the airport at 10:15, grocery list…"></textarea>
+          </div>
+
+          <button class="btn btn-gold btn-block" type="submit">Send request</button>
+          <p class="form-note">By sending, you agree to be contacted about this request.</p>
+        </form>
+
+        <div class="book-success" id="book-success" hidden tabindex="-1">
+          <h3>Thank you — request received.</h3>
+          <p>Here's a summary of what you sent. Our concierge will contact you to confirm.</p>
+          <dl id="book-summary"></dl>
+          <button class="btn btn-ghost-light" type="button" id="book-again">Make another request</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>
+        <a class="brand brand-footer" href="index.html#top">
+          <span class="brand-mark" aria-hidden="true">YW</span>
+          <span class="brand-text">
+            <span class="brand-name">YourestWedo Co.,Ltd.</span>
+            <span class="brand-tag">CHOWREST — rest in peace &amp; comfort</span>
+          </span>
+        </a>
+      </div>
+      <nav class="footer-nav" aria-label="Footer">
+        <a href="index.html#services">Services</a>
+        <a href="index.html#how">How it works</a>
+        <a href="#book">Book</a>
+        <a href="index.html#faq">FAQ</a>
+      </nav>
+      <p class="copyright">© <span id="year">2026</span> YourestWedo Co.,Ltd. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
