@@ -32,17 +32,19 @@ Each service has its own subdomain of `chowrest-property.com`:
 
 | Address | Page |
 | --- | --- |
-| `chowrest-property.com` | `index.html` (main Chowrest page) |
+| `services.chowrest-property.com` | `index.html` (YourestWedo main page) |
 | `cleaning.chowrest-property.com` | `cleaning.html` |
 | `chauffeur.chowrest-property.com` | `chauffeur.html` |
 | `carwash.chowrest-property.com` | `carwash.html` |
 | `grocery.chowrest-property.com` | `grocery.html` |
 
-On a service subdomain, links to another service go to that service's subdomain, and links to the main page go to `chowrest-property.com`.
+The bare `chowrest-property.com` is the separate Chowrest property site and is not served by this Worker; don't add it as a custom domain here.
+
+On a service subdomain, links to another service go to that service's subdomain, and links to the main page go to `services.chowrest-property.com`.
 
 ### Deploy on Cloudflare Workers
 
-The domain is on Cloudflare and the site deploys as the `yourestwedo` Worker (`wrangler.jsonc`). Cloudflare builds it from the `main` branch with deploy command `npx wrangler deploy` and no build command.
+The site deploys as the `yourestwedo` Worker (`wrangler.jsonc`). Every push to `main` runs `.github/workflows/deploy.yml`, which runs `wrangler deploy` using the `CLOUDFLARE_API_TOKEN` repository secret. It can also be started by hand from the Actions tab.
 
 After the first successful deploy, open the Worker → **Settings** → **Domains & Routes** → **Add** → **Custom domain**, and add each of the five addresses above. Cloudflare creates the DNS records itself.
 
