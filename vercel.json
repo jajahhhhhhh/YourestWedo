@@ -1,9 +1,9 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/", "has": [{ "type": "host", "value": "cleaning.chowrestproperty.com" }], "destination": "/cleaning.html" },
-    { "source": "/", "has": [{ "type": "host", "value": "chauffeur.chowrestproperty.com" }], "destination": "/chauffeur.html" },
-    { "source": "/", "has": [{ "type": "host", "value": "carwash.chowrestproperty.com" }], "destination": "/carwash.html" },
-    { "source": "/", "has": [{ "type": "host", "value": "grocery.chowrestproperty.com" }], "destination": "/grocery.html" }
+    { "source": "/", "has": [{ "type": "host", "value": "cleaning.chowrest-property.com" }], "destination": "/cleaning.html" },
+    { "source": "/", "has": [{ "type": "host", "value": "chauffeur.chowrest-property.com" }], "destination": "/chauffeur.html" },
+    { "source": "/", "has": [{ "type": "host", "value": "carwash.chowrest-property.com" }], "destination": "/carwash.html" },
+    { "source": "/", "has": [{ "type": "host", "value": "grocery.chowrest-property.com" }], "destination": "/grocery.html" }
   ]
 }

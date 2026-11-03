@@ -14,7 +14,8 @@ This repository holds the company's marketing website, a static, dependency-free
 | `styles.css` | Styling (responsive, mobile-first breakpoints) |
 | `cleaning.html`, `chauffeur.html`, `carwash.html`, `grocery.html` | One page per service: details, that service's availability calendar, and a booking form with the service preselected |
 | `script.js` | Mobile menu, per-service availability calendars, booking form validation & confirmation |
-| `vercel.json` | Serves each service page on its own subdomain (see below) |
+| `functions/_middleware.js` | Cloudflare Pages: serves each service page on its own subdomain (see below) |
+| `vercel.json` | The same subdomain routing, for Vercel |
 
 ### Run locally
 
@@ -32,17 +33,25 @@ Any static host works (GitHub Pages, Vercel, Netlify, Cloudflare Pages). There i
 
 ### Service subdomains
 
-On Vercel, `vercel.json` maps each subdomain of `chowrestproperty.com` to its service page:
+Each service has its own subdomain of `chowrest-property.com` (the domain is on Cloudflare):
 
-| Subdomain | Page |
+| Address | Page |
 | --- | --- |
-| `chowrestproperty.com` (and `www.`) | `index.html` (main Chowrest page) |
-| `cleaning.chowrestproperty.com` | `cleaning.html` |
-| `chauffeur.chowrestproperty.com` | `chauffeur.html` |
-| `carwash.chowrestproperty.com` | `carwash.html` |
-| `grocery.chowrestproperty.com` | `grocery.html` |
+| `chowrest-property.com` | `index.html` (main Chowrest page) |
+| `cleaning.chowrest-property.com` | `cleaning.html` |
+| `chauffeur.chowrest-property.com` | `chauffeur.html` |
+| `carwash.chowrest-property.com` | `carwash.html` |
+| `grocery.chowrest-property.com` | `grocery.html` |
 
-To turn them on: import this repo as a Vercel project, add the domain and the four subdomains under Project → Settings → Domains, and create the DNS records Vercel shows at your domain registrar. On any other host, the pages are also reachable as `/cleaning`, `/chauffeur`, `/carwash` and `/grocery`.
+On a service subdomain, links to another service go to that service's subdomain, and links to the main page go to `chowrest-property.com`.
+
+**Cloudflare Pages (recommended, the domain is already on Cloudflare).** Routing is handled by `functions/_middleware.js`.
+
+1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git** → choose `jajahhhhhhh/YourestWedo`.
+2. Framework preset: **None**. Build command: leave empty. Build output directory: `/`. Production branch: `main`.
+3. After the first deploy, open the project → **Custom domains** and add `chowrest-property.com`, `cleaning.chowrest-property.com`, `chauffeur.chowrest-property.com`, `carwash.chowrest-property.com` and `grocery.chowrest-property.com`. Cloudflare creates the DNS records automatically.
+
+**Vercel (alternative).** `vercel.json` does the same routing. Add the five addresses under Project → Settings → Domains and create the DNS records Vercel shows in Cloudflare (set them to "DNS only", grey cloud).
 
 ## Before going live
 
