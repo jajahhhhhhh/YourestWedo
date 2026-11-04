@@ -54,10 +54,26 @@ To test the routing locally:
 npx wrangler dev
 ```
 
+### Booking requests on LINE
+
+When a customer sends the booking form, the Worker (`POST /api/booking`) checks the request and sends it as a LINE message through the LINE Messaging API. The message includes the services, date and time, contact details, address, and a Google Maps link. Bots that fill a hidden form field are ignored.
+
+One-time setup:
+
+1. In the [LINE Developers console](https://developers.line.biz/console/), create a provider and a **Messaging API** channel (this creates a LINE Official Account).
+2. In the channel's **Messaging API** tab, issue a **Channel access token (long-lived)**.
+3. In the **Basic settings** tab, copy **Your user ID** (starts with `U`).
+4. Add the Official Account as a friend in LINE (scan the QR code in the Messaging API tab), or it can't message you.
+5. In Cloudflare → Workers & Pages → yourestwedo → **Settings** → **Variables and Secrets**, add two secrets:
+   - `LINE_CHANNEL_ACCESS_TOKEN`: the token from step 2
+   - `LINE_TO`: the user ID from step 3. To notify several people, separate their IDs with commas. Each person must have added the Official Account as a friend.
+
+Secrets stay in Cloudflare across deploys. Until both are set, the form shows "we couldn't send your request".
+
 ## Before going live
 
 - **Keep booked days up to date.** Each service's fully booked days are listed in `BOOKED` in `script.js`; they are not synced with Google Calendar.
-- **Connect the booking form.** Right now requests are validated and confirmed on screen, and saved only in the visitor's browser (`localStorage` key `yw-requests`). Nothing reaches the business yet. Wire the submit handler in `script.js` to email, LINE, a form service (e.g. Formspree), or a backend/CRM.
+- **Set the LINE secrets** (see "Booking requests on LINE") so booking requests reach the team.
 - **Add contact details** (phone, LINE ID, email, address, opening hours) to the footer and booking section.
 - **Confirm the service area** and any pricing you want to publish (the FAQ currently says prices are quoted per request).
 - Optional: add a Thai-language version and real photography.

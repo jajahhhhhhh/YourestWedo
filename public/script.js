@@ -138,6 +138,8 @@
   var success = document.getElementById("book-success");
   var summary = document.getElementById("book-summary");
   var again = document.getElementById("book-again");
+  var submitBtn = document.getElementById("book-submit");
+  var formStatus = document.getElementById("form-status");
   if (!form) return;
 
   var SERVICE_LABELS = {
@@ -390,20 +392,45 @@
       return;
     }
 
-    // NOTE: No backend is connected yet. Requests are kept in this browser
-    // only, so the business can wire up email/LINE/CRM delivery later.
-    try {
-      var key = "yw-requests";
-      var saved = JSON.parse(localStorage.getItem(key) || "[]");
-      saved.push(Object.assign({ submittedAt: new Date().toISOString() }, result.data));
-      localStorage.setItem(key, JSON.stringify(saved));
-    } catch (err) { /* storage unavailable — ignore */ }
+    // Send the request to the team on LINE (see /api/booking in worker.js).
+    var payload = Object.assign({}, result.data, {
+      lat: form.elements.lat.value,
+      lng: form.elements.lng.value,
+      address: form.elements.address.value.trim(),
+      website: form.elements.website.value,
+      page: location.href.split("#")[0]
+    });
+    delete payload.mapUrl;
 
-    renderSummary(result.data);
-    form.hidden = true;
-    success.hidden = false;
-    success.focus();
+    setFormStatus("");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending…";
+
+    fetch("/api/booking", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (body) {
+        if (!res.ok || !body.ok) throw new Error(body.error || "Request failed");
+      });
+    }).then(function () {
+      renderSummary(result.data);
+      form.hidden = true;
+      success.hidden = false;
+      success.focus();
+    }).catch(function () {
+      setFormStatus("Sorry, we couldn't send your request. Please check your connection and try again.");
+    }).then(function () {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Send request";
+    });
   });
+
+  function setFormStatus(message) {
+    formStatus.textContent = message;
+    formStatus.hidden = !message;
+  }
 
   // Clear an error as soon as the user fixes the field
   form.addEventListener("input", function (e) {
@@ -413,6 +440,7 @@
   again.addEventListener("click", function () {
     form.reset();
     if (locUse) resetLocation();
+    setFormStatus("");
     dateInput.min = todayISO();
     preselectPageService();
     success.hidden = true;

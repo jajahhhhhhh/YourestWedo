@@ -86,6 +86,7 @@
               <svg viewBox="0 0 24 24"><path d="M4 21h16M6 21V10l6-5 6 5v11M10 21v-6h4v6"/></svg>
             </div>
             <h3>Home Cleaning</h3>
+            <p class="price-from">From ฿500</p>
             <p>Regular upkeep, deep cleans, move-in/move-out, and post-event tidy-ups by trained housekeepers who bring their own premium supplies.</p>
             <ul class="ticks">
               <li>Kitchens, bathrooms &amp; living areas</li>
@@ -309,7 +310,12 @@
             <textarea id="notes" name="notes" rows="3" placeholder="E.g. 3-bedroom condo, pick-up from the airport at 10:15, grocery list…"></textarea>
           </div>
 
-          <button class="btn btn-gold btn-block" type="submit">Send request</button>
+          <div class="hp" aria-hidden="true">
+            <label for="website">Leave this field empty</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+          </div>
+          <p class="form-status" id="form-status" role="alert" hidden></p>
+          <button class="btn btn-gold btn-block" type="submit" id="book-submit">Send request</button>
           <p class="form-note">By sending, you agree to be contacted about this request.</p>
         </form>
 
@@ -336,7 +342,7 @@
           </details>
           <details>
             <summary>How is pricing calculated?</summary>
-            <p>Pricing depends on the service, size of the job and duration. We confirm an exact price with you before anything is scheduled.</p>
+            <p>Pricing depends on the service, size of the job and duration. Home cleaning starts from ฿500 for a rental room, ฿700 for a condo and ฿1,000 for a 2-bedroom house. See the <a href="cleaning.html#prices">cleaning prices</a>. We confirm an exact price with you before anything is scheduled.</p>
           </details>
           <details>
             <summary>Can I combine several services on the same day?</summary>

@@ -48,7 +48,7 @@
         <p class="lead"><strong class="sub-tagline">A spotless home, without lifting a finger.</strong> Trained housekeepers bring premium supplies and leave every room fresh. Book one visit, a regular schedule, or a turnover clean between guests.</p>
         <div class="hero-actions">
           <a class="btn btn-gold" href="#book">Book a cleaning</a>
-          <a class="btn btn-ghost" href="#calendar">See availability</a>
+          <a class="btn btn-ghost" href="#prices">See prices</a>
         </div>
       </div>
     </section>
@@ -76,6 +76,42 @@
           </ul>
           <p class="sub-others">Other services: <a href="chauffeur.html">Chauffeur</a> · <a href="carwash.html">Car Wash at Home</a> · <a href="grocery.html">Grocery Shopping & Delivery</a></p>
         </aside>
+      </div>
+    </section>
+
+    <!-- Cleaning prices -->
+    <section class="section" id="prices">
+      <div class="container">
+        <header class="section-head">
+          <p class="eyebrow">Cleaning prices</p>
+          <h2>Starting prices by property type</h2>
+          <p>Prices include cleaning equipment, cleaning products and basic tidying of the room.</p>
+        </header>
+        <div class="price-wrap">
+          <table class="price-table">
+            <caption class="sr-only">Starting cleaning prices in Thai baht</caption>
+            <thead>
+              <tr><th scope="col">Property</th><th scope="col">Size</th><th scope="col" class="num">Price</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">House or villa</th><td>2 bedrooms, 2 bathrooms, 1 kitchen, 1 living room</td><td class="num">฿1,000–1,500</td></tr>
+              <tr><th scope="row">House or villa</th><td>3 bedrooms, 3 bathrooms</td><td class="num">฿2,000</td></tr>
+              <tr><th scope="row">House or villa</th><td>4 bedrooms, 4 bathrooms</td><td class="num">฿3,000</td></tr>
+              <tr><th scope="row">Condo</th><td>Per unit</td><td class="num">฿700</td></tr>
+              <tr><th scope="row">Rental room or dorm room</th><td>Per room</td><td class="num">฿500</td></tr>
+              <tr><th scope="row">Big clean</th><td>Deep clean, depending on the job</td><td class="num">฿500–800</td></tr>
+            </tbody>
+          </table>
+          <div class="price-notes">
+            <h3>Good to know about pricing</h3>
+            <ul class="ticks">
+              <li>These are starting prices. We assess your place and confirm the final price with you before we schedule the clean.</li>
+              <li>Homes or villas that are very dirty, have stubborn stains, a lot of glass, or special areas that need extra time and labour cost more, depending on the job.</li>
+              <li>Larger homes are priced on site.</li>
+            </ul>
+            <a class="btn btn-gold" href="#book">Get a price for your place</a>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -198,7 +234,12 @@
             <textarea id="notes" name="notes" rows="3" placeholder="E.g. 3-bedroom condo, pick-up from the airport at 10:15, grocery list…"></textarea>
           </div>
 
-          <button class="btn btn-gold btn-block" type="submit">Send request</button>
+          <div class="hp" aria-hidden="true">
+            <label for="website">Leave this field empty</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+          </div>
+          <p class="form-status" id="form-status" role="alert" hidden></p>
+          <button class="btn btn-gold btn-block" type="submit" id="book-submit">Send request</button>
           <p class="form-note">By sending, you agree to be contacted about this request.</p>
         </form>
 

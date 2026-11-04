@@ -346,3 +346,31 @@ textarea { resize: vertical; }
 .loc-map { margin-top: 10px; }
 .loc-map iframe { display: block; width: 100%; height: 220px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
 .loc-map a { display: inline-block; margin-top: 6px; font-size: .85rem; font-weight: 600; color: var(--ink); }
+
+/* Booking form: spam trap and send status */
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.form-status { color: var(--danger); font-size: .9rem; margin: 0 0 12px; }
+
+/* Cleaning prices */
+.price-from { font-weight: 600; color: var(--gold-text); margin: -4px 0 10px; }
+.price-wrap { display: grid; grid-template-columns: 1.5fr 1fr; gap: 32px; align-items: start; }
+.price-wrap > * { min-width: 0; }
+.price-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); font-variant-numeric: tabular-nums; }
+.price-table th, .price-table td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.price-table thead th { font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
+.price-table tbody tr:last-child th, .price-table tbody tr:last-child td { border-bottom: 0; }
+.price-table tbody th { font-weight: 600; color: var(--ink); }
+.price-table td { color: var(--muted); }
+.price-table .num { text-align: right; white-space: nowrap; color: var(--ink); font-weight: 600; }
+.price-notes h3 { margin-bottom: 12px; }
+.price-notes .ticks { color: var(--muted); margin-bottom: 20px; }
+@media (max-width: 860px) { .price-wrap { grid-template-columns: 1fr; } }
+@media (max-width: 560px) {
+  .price-table thead { display: none; }
+  .price-table, .price-table tbody, .price-table tr { display: block; }
+  .price-table tr { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .price-table tbody tr:last-child { border-bottom: 0; }
+  .price-table th, .price-table td { padding: 0; border: 0; }
+  .price-table td:not(.num) { grid-column: 1; grid-row: 2; font-size: .9rem; }
+  .price-table .num { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+}
