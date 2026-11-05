@@ -70,6 +70,16 @@ One-time setup:
    - `LINE_CHANNEL_ACCESS_TOKEN`: the token from step 2
    - `LINE_TO`: the user ID from step 3. To notify several people, separate their IDs with commas. Each person must have added the Official Account as a friend.
 
+**Send bookings to a LINE group** (for example, the manager and staff):
+
+1. In LINE Official Account Manager → **Settings** → **Account settings**, turn on **Allow account to join groups and multi-person chats**. Under **Response settings**, turn off auto-reply messages so the bot stays quiet in the group.
+2. In the LINE Developers console → **Basic settings**, copy the **Channel secret** and add it as a third Cloudflare secret, `LINE_CHANNEL_SECRET`.
+3. In the channel's **Messaging API** tab, set **Webhook URL** to `https://services.chowrest-property.com/api/line-webhook`, press **Verify**, and turn on **Use webhook**.
+4. Add the Official Account to the LINE group. It replies with the group's ID (starts with `C`). If it's already in the group, type `id` in the group.
+5. Set `LINE_TO` to that group ID. To also keep getting bookings in a personal chat, add your user ID after a comma, e.g. `C123…,U456…`.
+
+Typing `id` in a one-to-one chat with the Official Account replies with that person's user ID. Each ID in `LINE_TO` gets its own message, and a booking counts as sent if at least one of them receives it.
+
 Secrets stay in Cloudflare across deploys. Until both are set, the form shows "we couldn't send your request".
 
 ## Before going live
