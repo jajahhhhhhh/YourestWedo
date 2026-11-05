@@ -80,7 +80,7 @@ One-time setup:
 
 Typing `id` in a one-to-one chat with the Official Account replies with that person's user ID. Each ID in `LINE_TO` gets its own message, and a booking counts as sent if at least one of them receives it.
 
-Secrets stay in Cloudflare across deploys. Until both are set, the form shows "we couldn't send your request".
+Add each value with type **Secret** (Encrypt), not Text. `keep_vars` in `wrangler.jsonc` also stops deploys from clearing Text variables, but Secrets keep the token hidden in the dashboard. Until both are set, the form shows "we couldn't send your request".
 
 ## Before going live
 

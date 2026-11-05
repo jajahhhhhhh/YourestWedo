@@ -4,6 +4,8 @@
   "account_id": "aed56ccedac8bafaa6cc2551eea1cefe",
   "main": "worker.js",
   "compatibility_date": "2026-10-01",
+  // Keep variables added in the Cloudflare dashboard when GitHub Actions deploys.
+  "keep_vars": true,
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
