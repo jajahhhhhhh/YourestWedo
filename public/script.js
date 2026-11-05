@@ -118,6 +118,7 @@
       form.querySelectorAll('input[name="service"]').forEach(function (cb) {
         if (cb.value === calService) cb.checked = true;
       });
+      syncCleaning();
       document.getElementById("book").scrollIntoView(); // CSS scroll-behavior decides, so reduced motion is respected
       form.elements.name.focus({ preventScroll: true });
     });
@@ -163,6 +164,7 @@
     form.querySelectorAll('input[name="service"]').forEach(function (cb) {
       if (cb.value === pageService) cb.checked = true;
     });
+    syncCleaning();
   }
   preselectPageService();
 
@@ -173,6 +175,7 @@
       form.querySelectorAll('input[name="service"]').forEach(function (cb) {
         if (cb.value === value) cb.checked = true;
       });
+      syncCleaning();
       showForm();
     });
   });
@@ -281,6 +284,157 @@
     });
   }
 
+  // Cleaning details: property, rooms, area, photos and a rough estimate.
+  // Prices mirror the table on cleaning.html.
+  var MAX_PHOTOS = 4;
+  var photos = []; // { blob, url, name }
+
+  function isCleaningSelected() {
+    var cb = form.querySelector('input[name="service"][value="cleaning"]');
+    return !!(cb && cb.checked);
+  }
+
+  function syncCleaning() {
+    var box = document.getElementById("clean-details");
+    if (!box) return;
+    box.hidden = !isCleaningSelected();
+    updateEstimate();
+  }
+
+  function cleaningInfo() {
+    var el = form.elements;
+    return {
+      type: el.propType.value,
+      bedrooms: el.bedrooms.value,
+      bathrooms: el.bathrooms.value,
+      area: el.area.value
+    };
+  }
+
+  function estimateFor(info) {
+    var beds = parseInt(info.bedrooms, 10);
+    var baths = parseInt(info.bathrooms, 10);
+    if (info.type === "condo") return "฿700";
+    if (info.type === "room") return "฿500 per room";
+    if (info.type !== "house" || isNaN(beds)) return "";
+    var size = Math.max(beds, isNaN(baths) ? 0 : baths);
+    if (size <= 2) return "฿1,000–1,500";
+    if (size === 3) return "฿2,000";
+    if (size === 4) return "฿3,000";
+    return "Priced on site";
+  }
+
+  function updateEstimate() {
+    var out = document.getElementById("estimate");
+    if (!out) return;
+    var est = isCleaningSelected() ? estimateFor(cleaningInfo()) : "";
+    out.hidden = !est;
+    out.innerHTML = est
+      ? '<span>Rough estimate</span> <strong></strong> <small>Final price after we review your photos or visit.</small>'
+      : "";
+    if (est) out.querySelector("strong").textContent = est;
+  }
+
+  // Shrink a photo to at most 1600 px and about 900 KB as JPEG, so it
+  // uploads quickly and LINE can show it.
+  function compressPhoto(file) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      var src = URL.createObjectURL(file);
+      img.onload = function () {
+        URL.revokeObjectURL(src);
+        var scale = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+        var canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.naturalWidth * scale);
+        canvas.height = Math.round(img.naturalHeight * scale);
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        (function attempt(quality) {
+          canvas.toBlob(function (blob) {
+            if (!blob) return reject(new Error("encode"));
+            if (blob.size > 900 * 1024 && quality > 0.45) return attempt(quality - 0.15);
+            resolve(blob);
+          }, "image/jpeg", quality);
+        })(0.82);
+      };
+      img.onerror = function () { URL.revokeObjectURL(src); reject(new Error("decode")); };
+      img.src = src;
+    });
+  }
+
+  function photoError(message) {
+    var msg = document.getElementById("err-photos");
+    msg.textContent = message;
+    msg.hidden = !message;
+  }
+
+  function renderPhotos() {
+    var list = document.getElementById("photo-list");
+    list.textContent = "";
+    photos.forEach(function (p, i) {
+      var li = document.createElement("li");
+      var img = document.createElement("img");
+      img.src = p.url;
+      img.alt = "Photo " + (i + 1);
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "photo-remove";
+      btn.setAttribute("aria-label", "Remove photo " + (i + 1));
+      btn.textContent = "×";
+      btn.addEventListener("click", function () {
+        URL.revokeObjectURL(p.url);
+        photos.splice(i, 1);
+        photoError("");
+        renderPhotos();
+      });
+      li.appendChild(img);
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+    document.querySelector(".photo-drop").hidden = photos.length >= MAX_PHOTOS;
+  }
+
+  function clearPhotos() {
+    photos.forEach(function (p) { URL.revokeObjectURL(p.url); });
+    photos = [];
+    photoError("");
+    var list = document.getElementById("photo-list");
+    if (list) renderPhotos();
+  }
+
+  var photoInput = document.getElementById("photos");
+  if (photoInput) {
+    photoInput.addEventListener("change", function () {
+      var files = Array.prototype.slice.call(photoInput.files || []);
+      photoInput.value = "";
+      var room = MAX_PHOTOS - photos.length;
+      var skipped = files.length > room;
+      files = files.slice(0, Math.max(0, room)).filter(function (f) { return /^image\//.test(f.type) || !f.type; });
+      Promise.all(files.map(function (f) {
+        return compressPhoto(f).then(function (blob) {
+          return { blob: blob, url: URL.createObjectURL(blob), name: f.name };
+        }, function () { return null; });
+      })).then(function (done) {
+        var bad = done.filter(function (d) { return !d; }).length;
+        done.forEach(function (d) { if (d) photos.push(d); });
+        renderPhotos();
+        photoError(
+          bad ? "Some photos couldn't be read. Please use JPG or PNG photos." :
+          skipped ? "You can add up to " + MAX_PHOTOS + " photos." : ""
+        );
+      });
+    });
+    form.addEventListener("change", function (e) {
+      if (e.target.name === "service") syncCleaning();
+    });
+    ["propType", "bedrooms", "bathrooms"].forEach(function (n) {
+      form.elements[n].addEventListener("input", updateEstimate);
+      form.elements[n].addEventListener("change", updateEstimate);
+    });
+  }
+
   function validate() {
     var errors = [];
     var services = Array.prototype.filter.call(
@@ -296,6 +450,10 @@
     var lng = form.elements.lng.value;
     var date = form.elements.date.value;
 
+    var cleaning = services.indexOf("cleaning") !== -1 && !!form.elements.propType;
+    var info = cleaning ? cleaningInfo() : null;
+    function count(v) { return /^\d{1,2}$/.test(v) && +v <= 20; }
+
     var checks = {
       service: services.length > 0,
       name: name.length > 1,
@@ -304,6 +462,12 @@
       address: address.length > 3 || (lat !== "" && lng !== ""),
       date: date !== "" && date >= todayISO()
     };
+    if (form.elements.propType) {
+      checks.propType = !cleaning || info.type !== "";
+      checks.bedrooms = !cleaning || count(info.bedrooms);
+      checks.bathrooms = !cleaning || count(info.bathrooms);
+      checks.area = !cleaning || info.area === "" || (+info.area >= 5 && +info.area <= 5000);
+    }
 
     Object.keys(checks).forEach(function (key) {
       setError(key, !checks[key]);
@@ -337,7 +501,15 @@
         mapUrl: mapLinkFor(address, lat, lng),
         date: date,
         time: form.elements.time.value,
-        notes: form.elements.notes.value.trim()
+        notes: form.elements.notes.value.trim(),
+        cleaning: cleaning ? {
+          type: info.type,
+          bedrooms: info.bedrooms,
+          bathrooms: info.bathrooms,
+          area: info.area,
+          estimate: estimateFor(info),
+          photos: photos.length
+        } : null
       }
     };
   }
@@ -354,6 +526,15 @@
       ["Time", data.time || "Any time"],
       ["Details", data.notes || "—"]
     ];
+    if (data.cleaning) {
+      var TYPES = { house: "House or villa", condo: "Condo", room: "Rental room or dorm room", other: "Other" };
+      var c = data.cleaning;
+      rows.splice(1, 0,
+        ["Property", TYPES[c.type] + " · " + c.bedrooms + " bed, " + c.bathrooms + " bath" + (c.area ? " · " + c.area + " m²" : "")],
+        ["Estimate", c.estimate || "We'll quote after reviewing"],
+        ["Photos", c.photos ? c.photos + " attached" : "None"]
+      );
+    }
     summary.textContent = "";
     rows.forEach(function (r) {
       var dt = document.createElement("dt");
@@ -401,16 +582,17 @@
       page: location.href.split("#")[0]
     });
     delete payload.mapUrl;
+    var body = new FormData();
+    body.append("data", JSON.stringify(payload));
+    if (result.data.cleaning) {
+      photos.forEach(function (p, i) { body.append("photos", p.blob, "photo-" + (i + 1) + ".jpg"); });
+    }
 
     setFormStatus("");
     submitBtn.disabled = true;
     submitBtn.textContent = "Sending…";
 
-    fetch("/api/booking", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload)
-    }).then(function (res) {
+    fetch("/api/booking", { method: "POST", body: body }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (body) {
         if (!res.ok || !body.ok) throw new Error(body.error || "Request failed");
       });
@@ -440,6 +622,7 @@
   again.addEventListener("click", function () {
     form.reset();
     if (locUse) resetLocation();
+    clearPhotos();
     setFormStatus("");
     dateInput.min = todayISO();
     preselectPageService();

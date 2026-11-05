@@ -58,6 +58,8 @@ npx wrangler dev
 
 When a customer sends the booking form, the Worker (`POST /api/booking`) checks the request and sends it as a LINE message through the LINE Messaging API. The message includes the services, date and time, contact details, address, and a Google Maps link. Bots that fill a hidden form field are ignored.
 
+For cleaning, the form also asks for the property type, bedrooms, bathrooms and usable area. It shows a rough estimate from the price table, and accepts up to 4 photos. Photos are shrunk in the browser (max 1600 px, under about 900 KB). The Worker stores them for 30 days in the `PhotoStore` Durable Object, which is created automatically on deploy. They are served from `/api/photo/<random id>.jpg` and sent to LINE as image messages after the text.
+
 One-time setup:
 
 1. In the [LINE Developers console](https://developers.line.biz/console/), create a provider and a **Messaging API** channel (this creates a LINE Official Account).
