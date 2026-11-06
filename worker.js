@@ -30,7 +30,7 @@ const ASSET = /\.(css|js|png|jpe?g|gif|svg|webp|ico|woff2?|txt|xml|json)$/i;
 
 const SERVICE_LABELS = {
   cleaning: "Home cleaning",
-  chauffeur: "Chauffeur",
+  chauffeur: "Chauffeur & errands",
   carwash: "Car wash at home",
   grocery: "Grocery delivery",
 };
