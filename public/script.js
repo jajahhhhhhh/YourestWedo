@@ -56,7 +56,7 @@
   var pageService = document.body.getAttribute("data-service-page");
   var calService = pageService || "cleaning";
   var SERVICE_NAMES = {
-    cleaning: "home cleaning", chauffeur: "a chauffeur",
+    cleaning: "home cleaning", chauffeur: "a chauffeur or errand",
     carwash: "a car wash", grocery: "grocery delivery"
   };
 
@@ -145,7 +145,7 @@
 
   var SERVICE_LABELS = {
     cleaning: "Home cleaning",
-    chauffeur: "Chauffeur",
+    chauffeur: "Chauffeur & errands",
     carwash: "Car wash at home",
     grocery: "Grocery delivery"
   };
