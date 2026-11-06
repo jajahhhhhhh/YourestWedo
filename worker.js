@@ -236,6 +236,23 @@ function chatIdReply(source, joined) {
     "\n\nTo get booking requests in this chat, add this ID to LINE_TO in Cloudflare.";
 }
 
+// Road distance for the errand price calculator. Proxies OSRM so the page
+// doesn't depend on a third-party server allowing browser requests.
+async function handleRoute(url) {
+  const coord = /^-?\d{1,3}(\.\d+)?,-?\d{1,3}(\.\d+)?$/;
+  const from = url.searchParams.get("from") || "", to = url.searchParams.get("to") || "";
+  if (!coord.test(from) || !coord.test(to)) return json(400, { ok: false, error: "Use from=lng,lat&to=lng,lat." });
+  const api = "https://router.project-osrm.org/route/v1/driving/" + from + ";" + to + "?overview=full&geometries=geojson";
+  try {
+    const res = await fetch(api, { headers: { "user-agent": "YourestWedo errand calculator (services.chowrest-property.com)" }, cf: { cacheTtl: 86400, cacheEverything: true } });
+    const d = await res.json();
+    if (!res.ok || !d.routes || !d.routes.length) return json(502, { ok: false, error: "No route found." });
+    return json(200, { ok: true, distance: d.routes[0].distance, duration: d.routes[0].duration, geometry: d.routes[0].geometry });
+  } catch {
+    return json(502, { ok: false, error: "Routing is unavailable right now." });
+  }
+}
+
 async function handleLineWebhook(request, env, ctx) {
   if (request.method !== "POST") return json(405, { ok: false, error: "Use POST." });
   if (!env.LINE_CHANNEL_SECRET || !env.LINE_CHANNEL_ACCESS_TOKEN) {
@@ -277,6 +294,7 @@ export default {
     // Booking requests and their photos work on every host.
     if (url.pathname === "/api/booking") return handleBooking(request, env);
     if (url.pathname === "/api/line-webhook") return handleLineWebhook(request, env, ctx);
+    if (url.pathname === "/api/route") return handleRoute(url);
     const photo = url.pathname.match(/^\/api\/photo\/([a-f0-9]{32})\.jpg$/);
     if (photo) {
       if (!env.PHOTOS || !["GET", "HEAD"].includes(request.method)) return new Response("Not found", { status: 404 });

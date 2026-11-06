@@ -498,3 +498,32 @@ textarea { resize: vertical; }
 .trip-tile:hover img { transform: scale(1.03); }
 @media (max-width: 720px) { .trip-photos { grid-template-columns: 1fr 1fr; } }
 @media (prefers-reduced-motion: reduce) { .trip-tile img { transition: none; } }
+
+/* Errand price calculator */
+.calc { display: grid; grid-template-columns: 1.5fr 1fr; gap: 0; margin-bottom: 32px; border-radius: 20px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--surface); }
+.calc > * { min-width: 0; }
+.calc-map { min-height: 420px; background: var(--tint); }
+.calc-panel { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.calc-panel .trip-label { color: var(--gold-text); margin: 0; }
+.calc-rate { margin: 0; font-family: var(--serif); font-size: 1.6rem; color: var(--ink); }
+.calc-modes { display: flex; gap: 8px; }
+.calc-mode { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); font: 600 .9rem/1 var(--sans); color: var(--ink); cursor: pointer; }
+.calc-mode[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); background: #fff; }
+.calc-dot { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: #fff; font-size: .75rem; }
+.calc-dot.pickup { background: #1f7a4d; } .calc-dot.drop { background: #b3261e; }
+.calc-search { display: flex; gap: 8px; }
+.calc-search input { flex: 1; min-width: 0; }
+.calc-search button { padding: 0 14px; border-radius: 10px; border: 1px solid var(--ink); background: var(--ink); color: #fff; font: 600 .9rem/1 var(--sans); cursor: pointer; }
+.calc-locate { align-self: flex-start; }
+.calc-points { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; font-size: .88rem; }
+.calc-points dt { color: var(--muted); }
+.calc-points dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+.calc-status { margin: 0; font-size: .85rem; color: var(--muted); min-height: 1.2em; }
+.calc-result { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 12px; background: var(--ink); color: #d6e1df; }
+.calc-price { font-family: var(--serif); font-size: 2rem; color: #fff; font-variant-numeric: tabular-nums; }
+.calc-pin span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 3px solid #fff; color: #fff; font: 700 .8rem/1 var(--sans); box-shadow: 0 2px 6px rgba(0,0,0,.35); box-sizing: border-box; }
+.calc-pin.pickup span { background: #1f7a4d; } .calc-pin.drop span { background: #b3261e; }
+.leaflet-container { font-family: var(--sans); }
+@media (max-width: 860px) { .calc { grid-template-columns: 1fr; } .calc-map { min-height: 320px; } }
+.calc-result[hidden] { display: none; }
+#calc-book:disabled { opacity: .45; cursor: not-allowed; transform: none; }
