@@ -38,8 +38,9 @@
 // in the PhotoStore Durable Object and served from /api/photo/<id>.jpg so
 // LINE can show them as images.
 
-import { JobStore, createJob, adminCard, linkPayment, recordSlip, slipCard, syncSheet, sheetTest, onPostback, onText, onImage, teamOfChat, jobIdIn, ids } from "./jobs.js";
+import { JobStore, createJob, adminCard, linkPayment, recordSlip, slipCard, applyPayCheck, syncSheet, sheetTest, onPostback, onText, onImage, teamOfChat, jobIdIn, ids } from "./jobs.js";
 export { JobStore };
+import { checkSlip } from "./slipcheck.js";
 
 const MAIN_DOMAIN = "chowrest-property.com";
 const HOME_HOST = "services." + MAIN_DOMAIN; // YourestWedo main page
@@ -421,23 +422,50 @@ async function handlePaySlip(request, env, ctx) {
   let rec = { pay: null, job: null, dup: null };
   try { rec = await recordSlip(env, { ref: p.r, amount: p.a, note: p.n, url: img, qr, name }); } catch (e) { console.error("Slip record failed", String(e)); }
   const { pay, job, dup } = rec;
+
+  // Check the slip with the bank (EasySlip) when it's set up.
+  let verdict = null;
+  if (pay && dup && dup.ref === p.r && pay.status === "confirmed") verdict = { status: "already" };
+  else if (pay && env.EASYSLIP_KEY) verdict = await checkSlip(env, { qr, amount: p.a });
+  let finalJob = job;
+  if (verdict && (verdict.status === "ok" || verdict.status === "reject")) {
+    try {
+      const r = await applyPayCheck(env, p.r, verdict.status === "ok", "ระบบตรวจสลิป", verdict.status === "reject" ? verdict.th : "");
+      finalJob = r.job || job;
+    } catch (e) { console.error("Pay check failed", String(e)); }
+  }
+
   const lines = ["💳 Payment slip received" + (job ? " · " + job.id : ""), "Amount: " + baht(p.a), "Ref: " + p.r];
   if (p.n) lines.push("For: " + p.n);
   if (name) lines.push("From: " + name);
-  if (dup && dup.ref === p.r) lines.push("", "ℹ️ Same slip sent again for this link.");
-  else if (dup) lines.push("", "⚠️ This slip was already used for another payment (Ref " + dup.ref + "). It may be a reused slip.");
-  lines.push("", "Check the bank account, then tap ✅ or ❌ below.");
+  let card = null;
+  if (verdict && verdict.status === "ok") {
+    lines.push("", "✅ ตรวจสลิปกับธนาคารแล้ว: " + verdict.th, "บันทึกว่าเงินเข้าแล้วอัตโนมัติ");
+  } else if (verdict && verdict.status === "reject") {
+    lines.push("", "❌ ระบบปฏิเสธสลิปนี้: " + verdict.th, "ลูกค้าได้รับแจ้งให้ส่งสลิปที่ถูกต้องจากลิงก์เดิม");
+  } else if (verdict && verdict.status === "already") {
+    lines.push("", "ℹ️ ลูกค้าส่งสลิปใบเดิมซ้ำ การชำระนี้ยืนยันไปแล้ว");
+  } else {
+    if (dup && dup.ref === p.r) lines.push("", "ℹ️ Same slip sent again for this link.");
+    else if (dup) lines.push("", "⚠️ This slip was already used for another payment (Ref " + dup.ref + "). It may be a reused slip.");
+    if (verdict && verdict.th) lines.push("", "ℹ️ ตรวจอัตโนมัติไม่ได้: " + verdict.th);
+    lines.push("", "Check the bank account, then tap ✅ or ❌ below.");
+    if (pay) card = slipCard(pay, job, dup, !!qr);
+  }
   const messages = [{ type: "text", text: lines.join("\n") }, { type: "image", originalContentUrl: img, previewImageUrl: img }];
-  if (pay) messages.push(slipCard(pay, job, dup, !!qr));
+  if (card) messages.push(card);
   const recipients = String(env.LINE_TO).split(",").map((v) => v.trim()).filter(Boolean);
   let results = await Promise.all(recipients.map((to) => lineApi(env, "/v2/bot/message/push", { to, messages })));
-  if (pay && results.every((r) => !r.ok && r.status === 400)) {
+  if (card && results.every((r) => !r.ok && r.status === 400)) {
     results = await Promise.all(recipients.map((to) => lineApi(env, "/v2/bot/message/push", { to, messages: messages.slice(0, 2) })));
   }
   results.filter((r) => !r.ok).forEach((r) => console.error("LINE push failed", r.status, r.body));
+  if (finalJob) ctx.waitUntil(syncSheet(env, finalJob));
+  if (verdict && verdict.status === "reject") {
+    return json(422, { ok: false, rejected: true, error: verdict.reason });
+  }
   if (!results.some((r) => r.ok)) return json(502, { ok: false, error: "We couldn't send your slip right now. Please try again." });
-  if (job) ctx.waitUntil(syncSheet(env, job));
-  return json(200, { ok: true });
+  return json(200, { ok: true, verified: !!verdict && (verdict.status === "ok" || verdict.status === "already") });
 }
 
 async function handleLineWebhook(request, env, ctx) {

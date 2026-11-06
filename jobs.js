@@ -112,7 +112,7 @@ export function sheetRow(j) {
     teams: j.teams.map((t) => TEAM_LABEL[t]).join(", "),
     assignee: j.assignees.map((a) => a.name).join(", "),
     assigned: t("assigned"), travel: t("travel"), started: t("started"), done: t("done"),
-    price: j.price, payRef: asText(j.payRef), paid: (j.paidAt ? "สลิป " + bkk(j.paidAt) : "") + (j.payCheck ? (j.payCheck.ok ? " · ✅ เงินเข้า" : " · ❌ ไม่พบยอด") + " (" + j.payCheck.by + " " + bkk(j.payCheck.at) + ")" : j.paidAt ? " · รอตรวจ" : ""),
+    price: j.price, payRef: asText(j.payRef), paid: (j.paidAt ? "สลิป " + bkk(j.paidAt) : "") + (j.payCheck ? (j.payCheck.ok ? " · ✅ เงินเข้า" : " · ❌ " + (j.payCheck.note || "ไม่พบยอด")) + " (" + j.payCheck.by + " " + bkk(j.payCheck.at) + ")" : j.paidAt ? " · รอตรวจ" : ""),
     photos: j.photos.map((p) => p.url),
     slips: j.slips,
     log: j.log.map((l) => bkk(l.at) + " " + l.by + ": " + l.what).join("\n"),
@@ -354,7 +354,7 @@ export function slipCard(pay, job, dup, qrRead) {
 }
 
 function payText(job) {
-  if (job.payCheck) return job.payCheck.ok ? "✅ เงินเข้าแล้ว (" + job.payCheck.by + " " + bkk(job.payCheck.at) + ")" : "❌ ไม่พบยอด (" + job.payCheck.by + " " + bkk(job.payCheck.at) + ")";
+  if (job.payCheck) return job.payCheck.ok ? "✅ เงินเข้าแล้ว (" + job.payCheck.by + " " + bkk(job.payCheck.at) + ")" : "❌ " + (job.payCheck.note || "ไม่พบยอด") + " (" + job.payCheck.by + " " + bkk(job.payCheck.at) + ")";
   if (job.paidAt) return "ได้รับสลิปแล้ว " + bkk(job.paidAt) + " · รอตรวจยอด";
   return job.payRef ? "รอสลิป (Ref " + job.payRef + ")" : "ยังไม่ส่งลิงก์";
 }
@@ -375,6 +375,7 @@ export async function onPostback(env, e, role, ctx) {
   if (action === "send" || action === "cancel") {
     if (!role.admin) return true;
     if (action === "cancel") {
+      if (job.status === "cancelled") { await reply(env, e.replyToken, [t(job.id + " ถูกยกเลิกไปแล้ว")]); return true; }
       const wasSent = job.status !== "new";
       job.status = "cancelled"; job.log.push({ at: now, by: who, what: "cancelled" });
       await s.save(job);
@@ -431,6 +432,27 @@ export async function onPostback(env, e, role, ctx) {
   return false;
 }
 
+// Record a payment as confirmed or rejected (by an admin or by the slip
+// check) on its payment record and on the job it belongs to.
+export async function applyPayCheck(env, ref, ok, who, note) {
+  if (!env.JOBS) return { pay: null, job: null };
+  const s = store(env);
+  const pay = await s.getPay(ref);
+  if (!pay) return { pay: null, job: null };
+  const now = Date.now();
+  pay.status = ok ? "confirmed" : "rejected"; pay.by = who; pay.at = now; pay.note = note || "";
+  await s.savePay(pay);
+  let job = pay.jobId ? await s.get(pay.jobId) : null;
+  if (job) {
+    job.payCheck = { ok, by: who, at: now, note: note || "" };
+    job.log.push({ at: now, by: who, what: (ok ? "payment confirmed" : "payment rejected" + (note ? ": " + note : "")) + " ฿" + pay.amount + " (Ref " + ref + ")" });
+    job = await s.save(job);
+  }
+  return { pay, job };
+}
+
+export async function getPay(env, ref) { return env.JOBS ? store(env).getPay(ref) : null; }
+
 // Admin taps ✅ เงินเข้าแล้ว / ❌ ไม่พบยอด on a slip card.
 async function onPayCheck(env, e, role, ctx, s, ok, ref) {
   if (!role.admin) return true;
@@ -441,15 +463,7 @@ async function onPayCheck(env, e, role, ctx, s, ok, ref) {
     await reply(env, e.replyToken, [t("Ref " + ref + " ยืนยันเงินเข้าไปแล้วโดย " + pay.by + " (" + bkk(pay.at) + ")")]);
     return true;
   }
-  const now = Date.now();
-  pay.status = ok ? "confirmed" : "rejected"; pay.by = who; pay.at = now;
-  await s.savePay(pay);
-  let job = pay.jobId ? await s.get(pay.jobId) : null;
-  if (job) {
-    job.payCheck = { ok, by: who, at: now };
-    job.log.push({ at: now, by: who, what: (ok ? "payment confirmed" : "payment not found") + " ฿" + pay.amount + " (Ref " + ref + ")" });
-    job = await s.save(job);
-  }
+  const { job } = await applyPayCheck(env, ref, ok, who, ok ? "" : "ไม่พบยอด");
   const amount = "฿" + Number(pay.amount).toLocaleString("en-US");
   await reply(env, e.replyToken, [t(ok
     ? "✅ ยืนยันเงินเข้า " + amount + " · Ref " + ref + (job ? " · " + job.id : "") + " · โดย " + who
@@ -485,7 +499,7 @@ export async function onText(env, e, role, ctx) {
     if (job.status === "cancelled") { await reply(env, e.replyToken, [t(id + " ถูกยกเลิกแล้ว")]); return true; }
     const mentioned = ((e.message.mention && e.message.mention.mentionees) || []).filter((m) => m.type !== "all");
     let people = await Promise.all(mentioned.map(async (m) => ({
-      id: m.userId || "", name: m.userId ? await nameOf(env, e.source, m.userId) : text.substr(m.index + 1, m.length - 1),
+      id: m.userId || "", name: m.userId ? await nameOf(env, e.source, m.userId) : mentionName(text, m),
     })));
     if (!people.length) {
       const after = text.replace(/^\s*\S+\s+J-?\d+\s*/i, "").trim();
@@ -508,6 +522,19 @@ export async function onText(env, e, role, ctx) {
     return true;
   }
   return false;
+}
+
+// Name of a tagged person, from the message text (used when LINE doesn't
+// give their user ID because they haven't added the bot as a friend).
+// LINE's index/length cover "@Name"; read the whole word around it so a
+// small offset can't cut the name short.
+export function mentionName(text, m) {
+  let start = Math.max(0, Math.min(m.index, text.length));
+  while (start > 0 && text[start - 1] !== "@" && !/\s/.test(text[start - 1])) start--;
+  if (start > 0 && text[start - 1] === "@") start--;
+  let end = Math.min(text.length, m.index + m.length);
+  while (end < text.length && !/\s/.test(text[end])) end++;
+  return text.slice(start, end).replace(/^@/, "").trim().slice(0, 60) || "ไม่ทราบชื่อ";
 }
 
 // Photos in a team group go to the sender's current job.
