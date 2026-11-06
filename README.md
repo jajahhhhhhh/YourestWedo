@@ -117,7 +117,7 @@ How a job moves:
 5. Photos that person sends in the team group are saved to their current job, including after photos up to 3 hours after "done".
 6. Type `งาน J-1001` in any of the groups to see the job's status.
 
-Each change updates one row per job in the Google Sheet. Photos and slips are copied to Google Drive (`YourestWedo job photos/J-1001`). To connect the sheet, follow the steps at the top of `tools/job-sheet.gs`, then add `SHEET_URL` and `SHEET_SECRET` in Cloudflare as Secrets.
+Each change updates one row per job in the Google Sheet. Photos and slips are copied to Google Drive (`YourestWedo job photos/J-1001`). To connect the sheet, follow the steps at the top of `tools/job-sheet.gs`, then add `SHEET_URL` and `SHEET_SECRET` in Cloudflare as Secrets. Type `sheet test` in the admin group to check the connection: the bot replies with what the sheet script answered and what to fix.
 
 LINE counts each message the bot pushes to a group once per member, but replies to button taps and commands are free. On the free plan, keep groups small, or move to a paid plan when jobs grow.
 
