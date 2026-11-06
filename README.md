@@ -92,7 +92,9 @@ The team asks for payment after the admin confirms the price.
 2. In the LINE group (or any chat in `LINE_TO`), type `pay <amount> <what it's for>`, e.g. `pay 1500 Cleaning 19 Nov, Khun Somchai`. Thai also works: `จ่าย 1500 …`.
 3. The bot replies with a payment link and a reference code. Send the link to the customer.
 4. The customer's page shows a PromptPay QR for exactly that amount. They pay in their bank app and upload the slip.
-5. The slip arrives in the admin group with the amount, reference, job and two buttons: **✅ เงินเข้าแล้ว** (money received) and **❌ ไม่พบยอด** (not found). Check the bank app, then tap one; the job and the sheet record who confirmed and when. The page reads the QR printed on the slip, so a slip that was already used for another payment is flagged. The website does not check with the bank by itself yet.
+5. The slip arrives in the admin group with the amount, reference, job and two buttons: **✅ เงินเข้าแล้ว** (money received) and **❌ ไม่พบยอด** (not found). Check the bank app, then tap one; the job and the sheet record who confirmed and when. The page reads the QR printed on the slip, so a slip that was already used for another payment is flagged. 
+
+   **Automatic slip check (EasySlip).** Sign up at easyslip.com, create an API key, and add it in Cloudflare as the Secret `EASYSLIP_KEY`. Each slip is then checked with the bank: the amount must equal the payment link, the slip must not have been used before, and the receiver name must contain the first name in `PROMPTPAY_NAME` (or set `SLIP_RECEIVER_NAME`; or register the account in EasySlip and set `EASYSLIP_MATCH_ACCOUNT` = `1`). A matching slip is confirmed automatically; a wrong one is rejected on the page, so the customer can send the right slip, and the admin group is told why. If EasySlip can't answer (for example a Bangkok Bank transfer under 5 minutes old) the ✅/❌ buttons are used as before.
 
 Links are signed with `LINE_CHANNEL_SECRET`, so the amount can't be changed in the address bar. Card payments through a payment gateway (Stripe or Opn/Omise) can be added once the merchant account is approved.
 

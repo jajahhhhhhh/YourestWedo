@@ -135,7 +135,15 @@
       body.append("slip", blob, "slip.jpg");
       return fetch("/api/pay/slip", { method: "POST", body: body }).then(function (r) { return r.json(); });
     }).then(function (d) {
-      if (!d.ok) throw new Error(d.error || "send");
+      if (!d.ok) {
+        // A rejected slip: let the customer pick the right one and try again.
+        if (d.rejected) $("slip-file").value = "";
+        throw new Error(d.error || "send");
+      }
+      if (d.verified) {
+        $("slip-done-title").textContent = "Payment confirmed — thank you.";
+        $("slip-done-text").innerHTML = 'We checked your transfer with the bank. <span lang="th">ชำระเงินเรียบร้อย ตรวจสอบกับธนาคารแล้ว ขอบคุณ</span>';
+      }
       form.hidden = true; $("pay-qr-box").hidden = true;
       $("slip-done").hidden = false; $("slip-done").focus();
     }).catch(function (err) {

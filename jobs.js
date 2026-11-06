@@ -112,7 +112,7 @@ export function sheetRow(j) {
     teams: j.teams.map((t) => TEAM_LABEL[t]).join(", "),
     assignee: j.assignees.map((a) => a.name).join(", "),
     assigned: t("assigned"), travel: t("travel"), started: t("started"), done: t("done"),
-    price: j.price, payRef: asText(j.payRef), paid: (j.paidAt ? "สลิป " + bkk(j.paidAt) : "") + (j.payCheck ? (j.payCheck.ok ? " · ✅ เงินเข้า" : " · ❌ ไม่พบยอด") + " (" + j.payCheck.by + " " + bkk(j.payCheck.at) + ")" : j.paidAt ? " · รอตรวจ" : ""),
+    price: j.price, payRef: asText(j.payRef), paid: (j.paidAt ? "สลิป " + bkk(j.paidAt) : "") + (j.payCheck ? (j.payCheck.ok ? " · ✅ เงินเข้า" : " · ❌ " + (j.payCheck.note || "ไม่พบยอด")) + " (" + j.payCheck.by + " " + bkk(j.payCheck.at) + ")" : j.paidAt ? " · รอตรวจ" : ""),
     photos: j.photos.map((p) => p.url),
     slips: j.slips,
     log: j.log.map((l) => bkk(l.at) + " " + l.by + ": " + l.what).join("\n"),
@@ -354,7 +354,7 @@ export function slipCard(pay, job, dup, qrRead) {
 }
 
 function payText(job) {
-  if (job.payCheck) return job.payCheck.ok ? "✅ เงินเข้าแล้ว (" + job.payCheck.by + " " + bkk(job.payCheck.at) + ")" : "❌ ไม่พบยอด (" + job.payCheck.by + " " + bkk(job.payCheck.at) + ")";
+  if (job.payCheck) return job.payCheck.ok ? "✅ เงินเข้าแล้ว (" + job.payCheck.by + " " + bkk(job.payCheck.at) + ")" : "❌ " + (job.payCheck.note || "ไม่พบยอด") + " (" + job.payCheck.by + " " + bkk(job.payCheck.at) + ")";
   if (job.paidAt) return "ได้รับสลิปแล้ว " + bkk(job.paidAt) + " · รอตรวจยอด";
   return job.payRef ? "รอสลิป (Ref " + job.payRef + ")" : "ยังไม่ส่งลิงก์";
 }
@@ -432,6 +432,27 @@ export async function onPostback(env, e, role, ctx) {
   return false;
 }
 
+// Record a payment as confirmed or rejected (by an admin or by the slip
+// check) on its payment record and on the job it belongs to.
+export async function applyPayCheck(env, ref, ok, who, note) {
+  if (!env.JOBS) return { pay: null, job: null };
+  const s = store(env);
+  const pay = await s.getPay(ref);
+  if (!pay) return { pay: null, job: null };
+  const now = Date.now();
+  pay.status = ok ? "confirmed" : "rejected"; pay.by = who; pay.at = now; pay.note = note || "";
+  await s.savePay(pay);
+  let job = pay.jobId ? await s.get(pay.jobId) : null;
+  if (job) {
+    job.payCheck = { ok, by: who, at: now, note: note || "" };
+    job.log.push({ at: now, by: who, what: (ok ? "payment confirmed" : "payment rejected" + (note ? ": " + note : "")) + " ฿" + pay.amount + " (Ref " + ref + ")" });
+    job = await s.save(job);
+  }
+  return { pay, job };
+}
+
+export async function getPay(env, ref) { return env.JOBS ? store(env).getPay(ref) : null; }
+
 // Admin taps ✅ เงินเข้าแล้ว / ❌ ไม่พบยอด on a slip card.
 async function onPayCheck(env, e, role, ctx, s, ok, ref) {
   if (!role.admin) return true;
@@ -442,15 +463,7 @@ async function onPayCheck(env, e, role, ctx, s, ok, ref) {
     await reply(env, e.replyToken, [t("Ref " + ref + " ยืนยันเงินเข้าไปแล้วโดย " + pay.by + " (" + bkk(pay.at) + ")")]);
     return true;
   }
-  const now = Date.now();
-  pay.status = ok ? "confirmed" : "rejected"; pay.by = who; pay.at = now;
-  await s.savePay(pay);
-  let job = pay.jobId ? await s.get(pay.jobId) : null;
-  if (job) {
-    job.payCheck = { ok, by: who, at: now };
-    job.log.push({ at: now, by: who, what: (ok ? "payment confirmed" : "payment not found") + " ฿" + pay.amount + " (Ref " + ref + ")" });
-    job = await s.save(job);
-  }
+  const { job } = await applyPayCheck(env, ref, ok, who, ok ? "" : "ไม่พบยอด");
   const amount = "฿" + Number(pay.amount).toLocaleString("en-US");
   await reply(env, e.replyToken, [t(ok
     ? "✅ ยืนยันเงินเข้า " + amount + " · Ref " + ref + (job ? " · " + job.id : "") + " · โดย " + who
