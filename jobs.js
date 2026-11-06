@@ -320,7 +320,8 @@ export async function slipReceived(env, ref, slipUrl) {
   return s.save(job);
 }
 
-// Button taps. role: "admin" | "maids" | "drivers"
+// Button taps. role: { admin: chat is in LINE_TO, team: "maids" | "drivers" | null }.
+// One group can be both (e.g. while testing with a single group).
 export async function onPostback(env, e, role, ctx) {
   const q = new URLSearchParams(e.postback.data || "");
   const action = q.get("job"), id = q.get("id");
@@ -332,7 +333,7 @@ export async function onPostback(env, e, role, ctx) {
   const now = Date.now();
 
   if (action === "send" || action === "cancel") {
-    if (role !== "admin") return true;
+    if (!role.admin) return true;
     if (action === "cancel") {
       const wasSent = job.status !== "new";
       job.status = "cancelled"; job.log.push({ at: now, by: who, what: "cancelled" });
@@ -348,16 +349,28 @@ export async function onPostback(env, e, role, ctx) {
       await reply(env, e.replyToken, [t("ยังไม่ได้ตั้งกลุ่ม " + missing.map((m) => TEAM_LABEL[m]).join(", ") + " ใน Cloudflare (" + missing.map((m) => TEAM_ENV[m]).join(", ") + ")")]);
       return true;
     }
-    if (job.status === "new") job.status = "sent";
-    job.log.push({ at: now, by: who, what: "sent to " + job.teams.join(", ") });
-    await s.save(job);
-    await reply(env, e.replyToken, [t("📤 ส่งงาน " + job.id + " ให้ " + job.teams.map((x) => TEAM_LABEL[x]).join(", ") + " แล้ว (" + who + ")")]);
-    ctx.waitUntil(Promise.all(job.teams.map((tm) => push(env, teamChats(env, tm).join(","), [t(teamText(job))])).concat(syncSheet(env, job))));
+    // Push first so the admin hears whether each team group really got it.
+    const sent = await Promise.all(job.teams.map((tm) => push(env, teamChats(env, tm).join(","), [t(teamText(job))])));
+    const ok = job.teams.filter((tm, i) => sent[i].some(Boolean));
+    const failed = job.teams.filter((tm, i) => !sent[i].some(Boolean));
+    if (ok.length) {
+      if (job.status === "new") job.status = "sent";
+      job.log.push({ at: now, by: who, what: "sent to " + ok.join(", ") });
+      await s.save(job);
+    }
+    const lines = [];
+    if (ok.length) lines.push("📤 ส่งงาน " + job.id + " ให้ " + ok.map((x) => TEAM_LABEL[x]).join(", ") + " แล้ว (" + who + ")");
+    if (failed.length) {
+      lines.push("❌ ส่งเข้า " + failed.map((x) => TEAM_LABEL[x]).join(", ") + " ไม่สำเร็จ ตรวจว่า " +
+        failed.map((x) => TEAM_ENV[x]).join(", ") + " ใน Cloudflare เป็นไอดีของกลุ่มที่มีบอทอยู่ (พิมพ์ id ในกลุ่มนั้นเพื่อดูไอดี)");
+    }
+    await reply(env, e.replyToken, [t(lines.join("\n"))]);
+    if (ok.length) ctx.waitUntil(syncSheet(env, job));
     return true;
   }
 
   if (ACTIONS[action]) {
-    if (role === "admin" || !job.teams.includes(role)) return true;
+    if (!role.team || !job.teams.includes(role.team)) return true;
     if (job.status === "cancelled") { await reply(env, e.replyToken, [t(job.id + " ถูกยกเลิกแล้ว")]); return true; }
     job.status = action; job.times[action] = now;
     job.log.push({ at: now, by: who, what: ACTIONS[action].say });
@@ -394,9 +407,14 @@ export async function onText(env, e, role, ctx) {
     return true;
   }
 
-  if (/^\s*(มอบ|มอบหมาย|assign)/i.test(text) && role !== "admin") {
+  if (/^\s*(มอบ|มอบหมาย|assign)/i.test(text) && !role.team) {
+    await reply(env, e.replyToken, [t("คำสั่ง มอบ ใช้ในกลุ่มทีม (กลุ่มแม่บ้านหรือกลุ่มคนขับ) ที่ตั้งไว้ใน LINE_TEAM_MAIDS / LINE_TEAM_DRIVERS")]);
+    return true;
+  }
+  if (/^\s*(มอบ|มอบหมาย|assign)/i.test(text)) {
+    const team = role.team;
     const job = await s.get(id);
-    if (!job || !job.teams.includes(role)) { await reply(env, e.replyToken, [t("ไม่พบงาน " + id + " ของ" + TEAM_LABEL[role])]); return true; }
+    if (!job || !job.teams.includes(team)) { await reply(env, e.replyToken, [t("ไม่พบงาน " + id + " ของ" + TEAM_LABEL[team])]); return true; }
     if (job.status === "cancelled") { await reply(env, e.replyToken, [t(id + " ถูกยกเลิกแล้ว")]); return true; }
     const mentioned = ((e.message.mention && e.message.mention.mentionees) || []).filter((m) => m.type !== "all");
     let people = await Promise.all(mentioned.map(async (m) => ({
@@ -409,7 +427,7 @@ export async function onText(env, e, role, ctx) {
     }
     const by = await nameOf(env, e.source, e.source.userId);
     const now = Date.now();
-    job.assignees = job.assignees.filter((a) => a.team !== role).concat(people.map((p) => ({ team: role, id: p.id, name: p.name })));
+    job.assignees = job.assignees.filter((a) => a.team !== team).concat(people.map((p) => ({ team, id: p.id, name: p.name })));
     job.status = "assigned"; job.times.assigned = now;
     job.log.push({ at: now, by, what: "assigned " + people.map((p) => p.name).join(", ") });
     await s.save(job);
@@ -417,7 +435,7 @@ export async function onText(env, e, role, ctx) {
     const names = people.map((p) => p.name).join(", ");
     await reply(env, e.replyToken, assignedMessages(job, names));
     ctx.waitUntil(Promise.all([
-      push(env, env.LINE_TO, [t("👷 " + job.id + " มอบให้ " + names + " แล้ว (" + TEAM_LABEL[role] + ", โดย " + by + ")")]),
+      push(env, env.LINE_TO, [t("👷 " + job.id + " มอบให้ " + names + " แล้ว (" + TEAM_LABEL[team] + ", โดย " + by + ")")]),
       syncSheet(env, job),
     ]));
     return true;
@@ -427,7 +445,7 @@ export async function onText(env, e, role, ctx) {
 
 // Photos in a team group go to the sender's current job.
 export async function onImage(env, e, role, ctx, savePhoto) {
-  if (!env.JOBS || role === "admin" || !e.source.userId) return false;
+  if (!env.JOBS || !role.team || !e.source.userId) return false;
   const s = store(env);
   const job = await s.activeFor(e.source.userId);
   if (!job) return false;

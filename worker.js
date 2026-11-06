@@ -451,22 +451,31 @@ async function handleLineWebhook(request, env, ctx) {
     if (!e.replyToken || !e.source) continue;
     // Only the admin chats (LINE_TO) and team groups can use commands.
     const chat = e.source.groupId || e.source.roomId || e.source.userId;
-    const role = admins.includes(chat) ? "admin" : teamOfChat(env, chat);
+    const role = { admin: admins.includes(chat), team: teamOfChat(env, chat) };
     const msg = e.type === "message" && e.message ? e.message : null;
-    if (role) {
+    if (role.admin || role.team) {
       const job = e.type === "postback" ? onPostback(env, e, role, ctx)
         : msg && msg.type === "text" ? onText(env, e, role, ctx)
         : msg && msg.type === "image" ? onImage(env, e, role, ctx, savePhoto)
         : null;
       if (job && (await job.catch((err) => { console.error("Job event failed", String(err)); return false; }))) continue;
     }
-    if (role === "admin" && msg && msg.type === "text" && /^\s*sheet\s*test\s*$/i.test(msg.text)) {
+    if (role.admin && msg && msg.type === "text" && /^\s*sheet\s*test\s*$/i.test(msg.text)) {
       replies.push(sheetTest(env).then((t) => lineApi(env, "/v2/bot/message/reply", {
         replyToken: e.replyToken, messages: [{ type: "text", text: t }],
       })));
       continue;
     }
-    const pay = role === "admin" && msg && msg.type === "text" ? parsePayCommand(msg.text) : null;
+    // "มอบ J-…" in a group that isn't set up as a team group: say how to set it up.
+    if (!role.admin && !role.team && msg && msg.type === "text" && /^\s*(มอบ|มอบหมาย|assign)/i.test(msg.text) && jobIdIn(msg.text)) {
+      replies.push(lineApi(env, "/v2/bot/message/reply", {
+        replyToken: e.replyToken,
+        messages: [{ type: "text", text: "กลุ่มนี้ยังไม่ได้ตั้งเป็นกลุ่มทีม\nไอดีกลุ่มนี้: " + chat +
+          "\n\nใส่ไอดีนี้ใน Cloudflare เป็น LINE_TEAM_MAIDS (กลุ่มแม่บ้าน) หรือ LINE_TEAM_DRIVERS (กลุ่มคนขับ) แล้วกด Deploy" }],
+      }));
+      continue;
+    }
+    const pay = role.admin && msg && msg.type === "text" ? parsePayCommand(msg.text) : null;
     if (pay) {
       replies.push(payReply(env, pay, ctx).then((t) => lineApi(env, "/v2/bot/message/reply", {
         replyToken: e.replyToken, messages: [{ type: "text", text: t }],
