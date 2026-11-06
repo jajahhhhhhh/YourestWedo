@@ -23,8 +23,9 @@
 // (or "จ่าย 1500 note"). The bot replies with a signed link to /pay that
 // shows a PromptPay QR for exactly that amount. The customer pays in their
 // bank app and uploads the slip, which is sent back to the group with
-// POST /api/pay/slip. Set PROMPTPAY_ID (mobile number or 13-digit tax ID)
-// and PROMPTPAY_NAME (account name shown to customers) as Worker variables.
+// POST /api/pay/slip. Set PROMPTPAY_ID (mobile number, 13-digit tax ID
+// or the 15-digit e-wallet ID from a bank app's PromptPay QR) and
+// PROMPTPAY_NAME (account name shown to customers) as Worker variables.
 // Links are signed with LINE_CHANNEL_SECRET so amounts can't be edited.
 //
 // Cleaning requests can include up to 4 photos. They are kept for 30 days
@@ -272,6 +273,7 @@ export function promptPayPayload(id, amount) {
   if (digits.length === 13) target = "02" + "13" + digits; // tax ID / national ID
   else if (digits.length === 10 && digits[0] === "0") target = "01" + "13" + ("0066" + digits.slice(1)); // mobile
   else if (digits.length === 11 && digits.startsWith("66")) target = "01" + "13" + ("00" + digits);
+  else if (digits.length === 15) target = "03" + "15" + digits; // e-wallet ID (e.g. K PLUS shop QR)
   else return "";
   const f = (tag, v) => tag + String(v.length).padStart(2, "0") + v;
   let p = f("00", "01") + f("01", "12") +

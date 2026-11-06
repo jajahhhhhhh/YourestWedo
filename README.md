@@ -87,7 +87,7 @@ Add each value with type **Secret** (Encrypt), not Text. `keep_vars` in `wrangle
 The team asks for payment after the admin confirms the price.
 
 1. In Cloudflare (Workers & Pages → yourestwedo → Settings → Variables and Secrets) add:
-   - `PROMPTPAY_ID`: the company's PromptPay mobile number or 13-digit tax ID.
+   - `PROMPTPAY_ID`: the company's PromptPay mobile number, 13-digit tax ID, or the 15-digit e-wallet ID shown under a bank app's receive QR (e.g. K PLUS `เลขที่อ้างอิง`).
    - `PROMPTPAY_NAME`: the account name customers should see, e.g. `YourestWedo Co.,Ltd.`
 2. In the LINE group (or any chat in `LINE_TO`), type `pay <amount> <what it's for>`, e.g. `pay 1500 Cleaning 19 Nov, Khun Somchai`. Thai also works: `จ่าย 1500 …`.
 3. The bot replies with a payment link and a reference code. Send the link to the customer.
