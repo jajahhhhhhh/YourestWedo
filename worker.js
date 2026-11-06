@@ -28,9 +28,18 @@
 // PROMPTPAY_NAME (account name shown to customers) as Worker variables.
 // Links are signed with LINE_CHANNEL_SECRET so amounts can't be edited.
 //
+// Jobs (jobs.js): each booking becomes a job (J-1001, …) with buttons in
+// the admin group to send it to the maids or drivers group
+// (LINE_TEAM_MAIDS, LINE_TEAM_DRIVERS), where the team leader assigns it and
+// staff update its status. Every change is logged to a Google Sheet through
+// an Apps Script web app (SHEET_URL, SHEET_SECRET; see tools/job-sheet.gs).
+//
 // Cleaning requests can include up to 4 photos. They are kept for 30 days
 // in the PhotoStore Durable Object and served from /api/photo/<id>.jpg so
 // LINE can show them as images.
+
+import { JobStore, createJob, adminCard, linkPayment, slipReceived, syncSheet, onPostback, onText, onImage, teamOfChat, jobIdIn, ids } from "./jobs.js";
+export { JobStore };
 
 const MAIN_DOMAIN = "chowrest-property.com";
 const HOME_HOST = "services." + MAIN_DOMAIN; // YourestWedo main page
@@ -45,7 +54,8 @@ const SERVICE_LABELS = {
 };
 const MAX_BODY = 8 * 1024; // the JSON part of a request
 const MAX_PHOTOS = 4;
-const MAX_PHOTO_BYTES = 1500 * 1024;
+const MAX_PHOTO_BYTES = 1500 * 1024; // customer uploads
+const MAX_STORED_PHOTO = 2000 * 1000; // staff photos from LINE (storage limit is 2 MB)
 const MAX_UPLOAD = MAX_PHOTOS * MAX_PHOTO_BYTES + 64 * 1024;
 const PHOTO_DAYS = 30;
 const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -118,7 +128,7 @@ export function bookingMessage(b) {
   const q = b.lat && b.lng ? `${b.lat},${b.lng}` : b.address;
   const map = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
   const lines = [
-    "🔔 New booking request – YourestWedo",
+    "🔔 New booking request – YourestWedo" + (b.jobId ? " · " + b.jobId : ""),
     "",
     "Services: " + b.services.map((s) => SERVICE_LABELS[s]).join(", "),
     "Date: " + b.date + (b.time ? " · " + b.time : " · Any time"),
@@ -144,7 +154,7 @@ export function bookingMessage(b) {
   return lines.join("\n").slice(0, 4900);
 }
 
-async function handleBooking(request, env) {
+async function handleBooking(request, env, ctx) {
   if (request.method !== "POST") return json(405, { ok: false, error: "Use POST." });
   if (!env.LINE_CHANNEL_ACCESS_TOKEN || !env.LINE_TO) {
     return json(503, { ok: false, error: "Booking messages are not set up yet." });
@@ -196,18 +206,32 @@ async function handleBooking(request, env) {
     }
   }
   booking.photoCount = imageUrls.length;
+  booking.photoUrls = imageUrls;
+  let job = null;
+  try { job = await createJob(env, booking); } catch (e) { console.error("Job create failed", String(e)); }
+  if (job) booking.jobId = job.id;
 
   const recipients = String(env.LINE_TO).split(",").map((id) => id.trim()).filter(Boolean);
   const messages = [{ type: "text", text: bookingMessage(booking) }].concat(
     imageUrls.map((u) => ({ type: "image", originalContentUrl: u, previewImageUrl: u })),
   );
+  // LINE allows 5 messages per push: add the job card, or send it after.
+  let extraCard = null;
+  if (job) { if (messages.length < 5) messages.push(adminCard(job)); else extraCard = adminCard(job); }
   // Push to each user or group separately: multicast only accepts user IDs.
-  const results = await Promise.all(recipients.map((to) => lineApi(env, "/v2/bot/message/push", { to, messages })));
+  let results = await Promise.all(recipients.map((to) => lineApi(env, "/v2/bot/message/push", { to, messages })));
+  // If LINE rejects the job card, still deliver the booking itself.
+  if (job && results.every((r) => !r.ok && r.status === 400)) {
+    const plain = messages.filter((m) => m.type !== "flex");
+    results = await Promise.all(recipients.map((to) => lineApi(env, "/v2/bot/message/push", { to, messages: plain })));
+  }
   const failed = results.filter((r) => !r.ok);
   for (const r of failed) console.error("LINE push failed", r.status, r.body);
   if (failed.length === results.length) {
     return json(502, { ok: false, error: "We couldn't send your request right now." });
   }
+  if (extraCard) ctx.waitUntil(Promise.all(recipients.map((to) => lineApi(env, "/v2/bot/message/push", { to, messages: [extraCard] }))));
+  if (job) ctx.waitUntil(syncSheet(env, job));
   return json(200, { ok: true });
 }
 
@@ -222,6 +246,16 @@ async function lineApi(env, path, payload) {
     body: JSON.stringify(payload),
   });
   return { ok: res.ok, status: res.status, body: res.ok ? "" : await res.text() };
+}
+
+// Keep a photo (staff job photo) in the PhotoStore; returns its public URL.
+async function savePhotoBytes(env, origin, body, type) {
+  if (!env.PHOTOS || !body.byteLength || body.byteLength > MAX_STORED_PHOTO) return "";
+  const id = crypto.randomUUID().replace(/-/g, "");
+  const put = await env.PHOTOS.get(env.PHOTOS.idFromName("photos")).fetch("https://photos/" + id, {
+    method: "PUT", headers: { "content-type": PHOTO_TYPES.includes(type) ? type : "image/jpeg" }, body,
+  });
+  return put.ok ? origin + "/api/photo/" + id + ".jpg" : "";
 }
 
 // LINE signs each webhook body with the channel secret (HMAC-SHA256, base64).
@@ -241,7 +275,10 @@ function chatIdReply(source, joined) {
     const id = source.groupId || source.roomId;
     return (joined ? "✅ YourestWedo bookings bot joined this group.\n\n" : "") +
       "This group's ID:\n" + id +
-      "\n\nTo get booking requests here, put this ID in LINE_TO in Cloudflare (Workers & Pages → yourestwedo → Settings → Variables and Secrets).";
+      "\n\nIn Cloudflare (Workers & Pages → yourestwedo → Settings → Variables and Secrets) put this ID in:" +
+      "\n• LINE_TO for the admin group (bookings, payments)" +
+      "\n• LINE_TEAM_MAIDS for the maids group" +
+      "\n• LINE_TEAM_DRIVERS for the drivers group";
   }
   return "Your LINE user ID:\n" + source.userId +
     "\n\nTo get booking requests in this chat, add this ID to LINE_TO in Cloudflare.";
@@ -332,13 +369,17 @@ export function parsePayCommand(t) {
   return { amount: String(+amount), note: n[2].replace(/\s+/g, " ").trim() };
 }
 
-async function payReply(env, cmd) {
+async function payReply(env, cmd, ctx) {
   if (cmd.help) {
     return "To make a payment link, type:\npay <amount> <what it's for>\n\nFor example:\npay 1500 Cleaning 19 Nov, Khun Somchai";
   }
   const link = await makePayLink(env, cmd.amount, cmd.note);
+  const jobId = jobIdIn(cmd.note);
+  const job = jobId ? await linkPayment(env, jobId, link.ref, cmd.amount).catch(() => null) : null;
+  if (job && ctx) ctx.waitUntil(syncSheet(env, job));
   return "💳 Payment link · " + baht(cmd.amount) + " · Ref " + link.ref +
     (cmd.note ? "\nFor: " + cmd.note : "") +
+    (job ? "\nJob: " + job.id + " (the slip will be matched to this job)" : jobId ? "\n⚠️ Job " + jobId + " not found" : "") +
     "\n\n" + link.url +
     "\n\nSend this link to the customer. They scan the PromptPay QR, pay, and upload the slip. The slip will arrive in this group with Ref " + link.ref + "." +
     (env.PROMPTPAY_ID ? "" : "\n\n⚠️ PROMPTPAY_ID is not set in Cloudflare yet, so the page can't show a QR code.");
@@ -354,7 +395,7 @@ async function handlePayInfo(url, env) {
   });
 }
 
-async function handlePaySlip(request, env) {
+async function handlePaySlip(request, env, ctx) {
   if (request.method !== "POST") return json(405, { ok: false, error: "Use POST." });
   if (!env.LINE_CHANNEL_ACCESS_TOKEN || !env.LINE_TO) return json(503, { ok: false, error: "Payments are not set up yet." });
   if (Number(request.headers.get("content-length") || 0) > MAX_PHOTO_BYTES + 16 * 1024) return json(413, { ok: false, error: "The slip image is too large." });
@@ -374,7 +415,9 @@ async function handlePaySlip(request, env) {
   if (!put.ok) return json(500, { ok: false, error: "We couldn't save your slip. Please try again." });
   const img = new URL(request.url).origin + "/api/photo/" + id + ".jpg";
 
-  const lines = ["💳 Payment slip received", "Amount: " + baht(p.a), "Ref: " + p.r];
+  let job = null;
+  try { job = await slipReceived(env, p.r, img); } catch (e) { console.error("Slip link failed", String(e)); }
+  const lines = ["💳 Payment slip received" + (job ? " · " + job.id : ""), "Amount: " + baht(p.a), "Ref: " + p.r];
   if (p.n) lines.push("For: " + p.n);
   if (name) lines.push("From: " + name);
   lines.push("", "Please check the bank account before confirming.");
@@ -383,6 +426,7 @@ async function handlePaySlip(request, env) {
   const results = await Promise.all(recipients.map((to) => lineApi(env, "/v2/bot/message/push", { to, messages })));
   results.filter((r) => !r.ok).forEach((r) => console.error("LINE push failed", r.status, r.body));
   if (!results.some((r) => r.ok)) return json(502, { ok: false, error: "We couldn't send your slip right now. Please try again." });
+  if (job) ctx.waitUntil(syncSheet(env, job));
   return json(200, { ok: true });
 }
 
@@ -399,16 +443,26 @@ async function handleLineWebhook(request, env, ctx) {
   let events = [];
   try { events = JSON.parse(body).events || []; } catch { return json(400, { ok: false, error: "Invalid body." }); }
 
-  const team = String(env.LINE_TO || "").split(",").map((v) => v.trim()).filter(Boolean);
+  const admins = ids(env.LINE_TO);
+  const origin = new URL(request.url).origin;
+  const savePhoto = (body, type) => savePhotoBytes(env, origin, body, type);
   const replies = [];
   for (const e of events) {
     if (!e.replyToken || !e.source) continue;
-    // Payment links can only be made from the team's own chats (LINE_TO).
+    // Only the admin chats (LINE_TO) and team groups can use commands.
     const chat = e.source.groupId || e.source.roomId || e.source.userId;
-    const pay = e.type === "message" && e.message && e.message.type === "text" && team.includes(chat)
-      ? parsePayCommand(e.message.text) : null;
+    const role = admins.includes(chat) ? "admin" : teamOfChat(env, chat);
+    const msg = e.type === "message" && e.message ? e.message : null;
+    if (role) {
+      const job = e.type === "postback" ? onPostback(env, e, role, ctx)
+        : msg && msg.type === "text" ? onText(env, e, role, ctx)
+        : msg && msg.type === "image" ? onImage(env, e, role, ctx, savePhoto)
+        : null;
+      if (job && (await job.catch((err) => { console.error("Job event failed", String(err)); return false; }))) continue;
+    }
+    const pay = role === "admin" && msg && msg.type === "text" ? parsePayCommand(msg.text) : null;
     if (pay) {
-      replies.push(payReply(env, pay).then((t) => lineApi(env, "/v2/bot/message/reply", {
+      replies.push(payReply(env, pay, ctx).then((t) => lineApi(env, "/v2/bot/message/reply", {
         replyToken: e.replyToken, messages: [{ type: "text", text: t }],
       })));
       continue;
@@ -436,11 +490,11 @@ export default {
     const host = url.hostname.toLowerCase();
 
     // Booking requests and their photos work on every host.
-    if (url.pathname === "/api/booking") return handleBooking(request, env);
+    if (url.pathname === "/api/booking") return handleBooking(request, env, ctx);
     if (url.pathname === "/api/line-webhook") return handleLineWebhook(request, env, ctx);
     if (url.pathname === "/api/route") return handleRoute(url);
     if (url.pathname === "/api/pay") return handlePayInfo(url, env);
-    if (url.pathname === "/api/pay/slip") return handlePaySlip(request, env);
+    if (url.pathname === "/api/pay/slip") return handlePaySlip(request, env, ctx);
     const photo = url.pathname.match(/^\/api\/photo\/([a-f0-9]{32})\.jpg$/);
     if (photo) {
       if (!env.PHOTOS || !["GET", "HEAD"].includes(request.method)) return new Response("Not found", { status: 404 });
@@ -485,7 +539,7 @@ export class PhotoStore {
     if (!/^[a-f0-9]{32}$/.test(id)) return new Response("Not found", { status: 404 });
     if (request.method === "PUT") {
       const body = await request.arrayBuffer();
-      if (!body.byteLength || body.byteLength > MAX_PHOTO_BYTES) return new Response("Bad photo", { status: 400 });
+      if (!body.byteLength || body.byteLength > MAX_STORED_PHOTO) return new Response("Bad photo", { status: 400 });
       await this.storage.put({
         ["photo:" + id]: body,
         ["meta:" + id]: { type: request.headers.get("content-type") || "image/jpeg", at: Date.now() },

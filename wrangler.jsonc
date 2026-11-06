@@ -14,7 +14,13 @@
     "run_worker_first": true
   },
   "durable_objects": {
-    "bindings": [{ "name": "PHOTOS", "class_name": "PhotoStore" }]
+    "bindings": [
+      { "name": "PHOTOS", "class_name": "PhotoStore" },
+      { "name": "JOBS", "class_name": "JobStore" }
+    ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PhotoStore"] }]
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["PhotoStore"] },
+    { "tag": "v2", "new_sqlite_classes": ["JobStore"] }
+  ]
 }
