@@ -1,11 +1,11 @@
 // Distance price calculator: ฿200 service + ฿12 per km, pickup to drop-off,
-// rounded up to the nearest ฿10. Pin A (pickup) and B (drop-off) on an
+// rounded up to the nearest ฿10, with a minimum fare of ฿300 per trip. Pin A (pickup) and B (drop-off) on an
 // OpenStreetMap map; road distance comes from OSRM via /api/route.
 // Used by the calculator on the chauffeur page ([data-calc-auto]) and by the
 // route section of the booking form on every page (mounted from script.js).
 (function () {
   "use strict";
-  var BASE = 200, PER_KM = 12;
+  var BASE = 200, PER_KM = 12, MIN_FARE = 300;
   var LEAFLET = "https://unpkg.com/leaflet@1.9.4/dist/leaflet";
   var leafletReady = null;
 
@@ -24,7 +24,8 @@
     return leafletReady;
   }
 
-  function priceFor(km) { return Math.ceil((BASE + PER_KM * km) / 10) * 10; }
+  function priceFor(km) { return Math.max(MIN_FARE, Math.ceil((BASE + PER_KM * km) / 10) * 10); }
+  function isMinFare(km) { return Math.ceil((BASE + PER_KM * km) / 10) * 10 < MIN_FARE; }
   function fmt(n) { return n.toLocaleString("en-US"); }
   function haversineKm(a, b) {
     var R = 6371, r = Math.PI / 180;
@@ -81,7 +82,8 @@
       el.distance.textContent = (approx ? "about " : "") + km.toFixed(1) + " km";
       el.price.textContent = "฿" + fmt(last.price);
       el.result.hidden = false;
-      setStatus(approx ? "Road route unavailable right now, so this uses an estimate of the road distance." : "Drag the pins to adjust. We confirm the final price before we go.");
+      setStatus((approx ? "Road route unavailable right now, so this uses an estimate of the road distance. " : "Drag the pins to adjust. ") +
+        (isMinFare(km) ? "Short trip, so the ฿" + MIN_FARE + " minimum fare applies. " : "") + "We confirm the final price before we go.");
       emit();
     }
 
@@ -150,7 +152,7 @@
         var a = points.pickup, b = points.drop;
         return {
           pickup: a, drop: b, km: last.km, price: last.price, approx: last.approx,
-          text: labelFor(a) + " → " + labelFor(b) + " · " + (last.approx ? "about " : "") + last.km.toFixed(1) + " km · estimate ฿" + fmt(last.price)
+          text: labelFor(a) + " → " + labelFor(b) + " · " + (last.approx ? "about " : "") + last.km.toFixed(1) + " km · estimate ฿" + fmt(last.price) + (isMinFare(last.km) ? " (minimum fare)" : "")
         };
       },
       setPoints: function (a, b) {
