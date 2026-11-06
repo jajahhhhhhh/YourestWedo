@@ -526,4 +526,10 @@ textarea { resize: vertical; }
 .leaflet-container { font-family: var(--sans); }
 @media (max-width: 860px) { .calc { grid-template-columns: 1fr; } .calc-map { min-height: 320px; } }
 .calc-result[hidden] { display: none; }
-#calc-book:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+[data-calc="book"]:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+/* Route calculator inside the booking form */
+.route-details > .field-help { margin: 0 0 14px; }
+.calc.calc-form { margin-bottom: 0; box-shadow: none; grid-template-columns: 1fr; border-radius: 12px; }
+.calc.calc-form .calc-map { min-height: 280px; }
+.calc.calc-form .calc-panel { padding: 16px; }
+.calc.calc-form .calc-price { font-size: 1.6rem; }

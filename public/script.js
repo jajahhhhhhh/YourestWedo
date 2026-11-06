@@ -299,7 +299,45 @@
     if (!box) return;
     box.hidden = !isCleaningSelected();
     updateEstimate();
+    syncRoute();
   }
+
+  // Errand route: when "Chauffeur & errands" is ticked, show a map to pin
+  // pickup and drop-off and price it at ฿200 + ฿12/km (see errand-calc.js).
+  var routeBox = document.getElementById("route-details");
+  var routeCalc = null;
+  function isChauffeurSelected() {
+    var cb = form.querySelector('input[name="service"][value="chauffeur"]');
+    return !!(cb && cb.checked);
+  }
+  function mountRoute() {
+    if (!routeBox || !window.YWCalc) return Promise.resolve(null);
+    return window.YWCalc.mount(routeBox, {
+      onChange: function (r) { form.elements.route.value = r ? r.text : ""; }
+    }).then(function (calc) { routeCalc = calc; return calc; });
+  }
+  function syncRoute() {
+    if (!routeBox) return;
+    var on = isChauffeurSelected();
+    routeBox.hidden = !on;
+    if (on) mountRoute().catch(function () {});
+  }
+  function resetRoute() {
+    if (form.elements.route) form.elements.route.value = "";
+    if (routeCalc) routeCalc.reset();
+  }
+  // Used by the calculator on the chauffeur page: "Book this errand"
+  window.YWBooking = {
+    useRoute: function (r) {
+      if (!routeBox) return;
+      showForm();
+      var cb = form.querySelector('input[name="service"][value="chauffeur"]');
+      if (cb) cb.checked = true;
+      syncCleaning();
+      document.getElementById("book").scrollIntoView();
+      mountRoute().then(function (calc) { if (calc) calc.setPoints(r.pickup, r.drop); });
+    }
+  };
 
   function cleaningInfo() {
     var el = form.elements;
@@ -502,6 +540,7 @@
         date: date,
         time: form.elements.time.value,
         notes: form.elements.notes.value.trim(),
+        route: form.elements.route && services.indexOf("chauffeur") !== -1 ? form.elements.route.value : "",
         cleaning: cleaning ? {
           type: info.type,
           bedrooms: info.bedrooms,
@@ -526,6 +565,7 @@
       ["Time", data.time || "Any time"],
       ["Details", data.notes || "—"]
     ];
+    if (data.route) rows.splice(rows.length - 1, 0, ["Route", data.route]);
     if (data.cleaning) {
       var TYPES = { house: "House or villa", condo: "Condo", room: "Rental room or dorm room", other: "Other" };
       var c = data.cleaning;
@@ -623,6 +663,7 @@
     form.reset();
     if (locUse) resetLocation();
     clearPhotos();
+    resetRoute();
     setFormStatus("");
     dateInput.min = todayISO();
     preselectPageService();

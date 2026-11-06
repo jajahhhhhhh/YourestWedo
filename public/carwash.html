@@ -131,6 +131,34 @@
             <p class="field-error" id="err-service" data-error-for="service" hidden>Please choose at least one service.</p>
           </fieldset>
 
+          <fieldset class="clean-details route-details" id="route-details" hidden>
+            <legend>Errand route and price</legend>
+            <p class="field-help">Pin where we pick up (A) and where we drop off (B). The price is ฿200 service + ฿12 per km, counted only from your pickup point to the drop-off. Optional: skip this for private trips or if you're not sure yet.</p>
+            <div class="calc calc-form">
+              <div class="calc-map" data-calc="map" role="application" aria-label="Map for choosing pickup and drop-off points"></div>
+              <div class="calc-panel">
+                <div class="calc-modes" role="group" aria-label="Which point to set">
+                  <button type="button" class="calc-mode" data-calc-mode="pickup" aria-pressed="true"><span class="calc-dot pickup">A</span> Pickup</button>
+                  <button type="button" class="calc-mode" data-calc-mode="drop" aria-pressed="false"><span class="calc-dot drop">B</span> Drop-off</button>
+                </div>
+                <div class="calc-search">
+                  <input data-calc="search" type="search" aria-label="Search for a place" placeholder="Search a place, e.g. Chaweng Beach" autocomplete="off">
+                  <button type="button" data-calc="search-btn">Search</button>
+                </div>
+                <button type="button" class="loc-btn calc-locate" data-calc="locate">Use my location as pickup</button>
+                <dl class="calc-points">
+                  <dt>A Pickup</dt><dd data-calc="pickup">Not set</dd>
+                  <dt>B Drop-off</dt><dd data-calc="drop">Not set</dd>
+                </dl>
+                <p class="calc-status" data-calc="status" role="status" aria-live="polite"></p>
+                <div class="calc-result" data-calc="result" hidden>
+                  <span class="calc-distance" data-calc="distance"></span>
+                  <span class="calc-price" data-calc="price"></span>
+                </div>
+              </div>
+            </div>
+            <input type="hidden" name="route" value="">
+          </fieldset>
           <fieldset class="clean-details" id="clean-details" hidden>
             <legend>Cleaning details</legend>
             <p class="field-help">Tell us about your place so we can estimate the price before we visit.</p>
@@ -285,6 +313,7 @@
     </div>
   </footer>
 
+  <script src="errand-calc.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
