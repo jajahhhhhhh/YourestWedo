@@ -86,13 +86,17 @@ export class JobStore extends DurableObject {
 
 // ---- Google Sheet ----------------------------------------------------------
 
+// A leading apostrophe makes Google Sheets keep the value as text, so phone
+// numbers keep their leading 0 (it isn't shown in the cell).
+function asText(v) { return v ? "'" + v : ""; }
+
 export function sheetRow(j) {
   const t = (k) => (j.times[k] ? bkk(j.times[k]) : "");
   return {
     id: j.id,
     created: bkk(j.createdAt),
     services: j.services.map((s) => SERVICE_TH[s] || s).join(", "),
-    customer: j.name, phone: j.phone, email: j.email || "",
+    customer: j.name, phone: asText(j.phone), email: j.email || "",
     address: j.address, map: mapUrl(j),
     date: j.date, time: j.time || "", details: j.notes || "",
     estimate: j.estimate || "", route: j.route || "",
@@ -100,7 +104,7 @@ export function sheetRow(j) {
     teams: j.teams.map((t) => TEAM_LABEL[t]).join(", "),
     assignee: j.assignees.map((a) => a.name).join(", "),
     assigned: t("assigned"), travel: t("travel"), started: t("started"), done: t("done"),
-    price: j.price, payRef: j.payRef, paid: j.paidAt ? bkk(j.paidAt) : "",
+    price: j.price, payRef: asText(j.payRef), paid: j.paidAt ? bkk(j.paidAt) : "",
     photos: j.photos.map((p) => p.url),
     slips: j.slips,
     log: j.log.map((l) => bkk(l.at) + " " + l.by + ": " + l.what).join("\n"),
