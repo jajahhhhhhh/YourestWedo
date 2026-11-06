@@ -38,7 +38,7 @@
 // in the PhotoStore Durable Object and served from /api/photo/<id>.jpg so
 // LINE can show them as images.
 
-import { JobStore, createJob, adminCard, linkPayment, slipReceived, syncSheet, sheetTest, onPostback, onText, onImage, teamOfChat, jobIdIn, ids } from "./jobs.js";
+import { JobStore, createJob, adminCard, linkPayment, recordSlip, slipCard, syncSheet, sheetTest, onPostback, onText, onImage, teamOfChat, jobIdIn, ids } from "./jobs.js";
 export { JobStore };
 
 const MAIN_DOMAIN = "chowrest-property.com";
@@ -415,15 +415,25 @@ async function handlePaySlip(request, env, ctx) {
   if (!put.ok) return json(500, { ok: false, error: "We couldn't save your slip. Please try again." });
   const img = new URL(request.url).origin + "/api/photo/" + id + ".jpg";
 
-  let job = null;
-  try { job = await slipReceived(env, p.r, img); } catch (e) { console.error("Slip link failed", String(e)); }
+  // The QR printed on the slip (read in the browser): the same QR twice means a reused slip.
+  const qrRaw = text(form.get("slipQr"), 400);
+  const qr = /^[\x21-\x7e]{16,400}$/.test(qrRaw) ? qrRaw : "";
+  let rec = { pay: null, job: null, dup: null };
+  try { rec = await recordSlip(env, { ref: p.r, amount: p.a, note: p.n, url: img, qr, name }); } catch (e) { console.error("Slip record failed", String(e)); }
+  const { pay, job, dup } = rec;
   const lines = ["💳 Payment slip received" + (job ? " · " + job.id : ""), "Amount: " + baht(p.a), "Ref: " + p.r];
   if (p.n) lines.push("For: " + p.n);
   if (name) lines.push("From: " + name);
-  lines.push("", "Please check the bank account before confirming.");
+  if (dup && dup.ref === p.r) lines.push("", "ℹ️ Same slip sent again for this link.");
+  else if (dup) lines.push("", "⚠️ This slip was already used for another payment (Ref " + dup.ref + "). It may be a reused slip.");
+  lines.push("", "Check the bank account, then tap ✅ or ❌ below.");
   const messages = [{ type: "text", text: lines.join("\n") }, { type: "image", originalContentUrl: img, previewImageUrl: img }];
+  if (pay) messages.push(slipCard(pay, job, dup, !!qr));
   const recipients = String(env.LINE_TO).split(",").map((v) => v.trim()).filter(Boolean);
-  const results = await Promise.all(recipients.map((to) => lineApi(env, "/v2/bot/message/push", { to, messages })));
+  let results = await Promise.all(recipients.map((to) => lineApi(env, "/v2/bot/message/push", { to, messages })));
+  if (pay && results.every((r) => !r.ok && r.status === 400)) {
+    results = await Promise.all(recipients.map((to) => lineApi(env, "/v2/bot/message/push", { to, messages: messages.slice(0, 2) })));
+  }
   results.filter((r) => !r.ok).forEach((r) => console.error("LINE push failed", r.status, r.body));
   if (!results.some((r) => r.ok)) return json(502, { ok: false, error: "We couldn't send your slip right now. Please try again." });
   if (job) ctx.waitUntil(syncSheet(env, job));
