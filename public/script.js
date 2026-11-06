@@ -659,7 +659,7 @@
       photos = card.getAttribute("data-work-photos").split("|");
       title = card.getAttribute("data-work-title");
       caption.textContent = title;
-      show(0);
+      show(parseInt(card.getAttribute("data-work-start") || "0", 10));
       dialog.showModal();
     });
   });
