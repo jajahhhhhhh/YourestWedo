@@ -19,6 +19,14 @@
 // When the Official Account joins a group, or someone types "id" in a chat
 // with it, it replies with that chat's ID so it can be put in LINE_TO.
 //
+// Payments (PromptPay): in the LINE group, an admin types "pay 1500 note"
+// (or "จ่าย 1500 note"). The bot replies with a signed link to /pay that
+// shows a PromptPay QR for exactly that amount. The customer pays in their
+// bank app and uploads the slip, which is sent back to the group with
+// POST /api/pay/slip. Set PROMPTPAY_ID (mobile number or 13-digit tax ID)
+// and PROMPTPAY_NAME (account name shown to customers) as Worker variables.
+// Links are signed with LINE_CHANNEL_SECRET so amounts can't be edited.
+//
 // Cleaning requests can include up to 4 photos. They are kept for 30 days
 // in the PhotoStore Durable Object and served from /api/photo/<id>.jpg so
 // LINE can show them as images.
@@ -255,6 +263,127 @@ async function handleRoute(url) {
   }
 }
 
+// ---- Payments ----------------------------------------------------------
+
+// PromptPay QR payload (EMVCo / Thai QR) for a mobile number or tax ID.
+export function promptPayPayload(id, amount) {
+  const digits = String(id || "").replace(/\D/g, "");
+  let target;
+  if (digits.length === 13) target = "02" + "13" + digits; // tax ID / national ID
+  else if (digits.length === 10 && digits[0] === "0") target = "01" + "13" + ("0066" + digits.slice(1)); // mobile
+  else if (digits.length === 11 && digits.startsWith("66")) target = "01" + "13" + ("00" + digits);
+  else return "";
+  const f = (tag, v) => tag + String(v.length).padStart(2, "0") + v;
+  let p = f("00", "01") + f("01", "12") +
+    f("29", f("00", "A000000677010111") + target) +
+    f("58", "TH") + f("53", "764") + f("54", Number(amount).toFixed(2)) + "6304";
+  let crc = 0xffff;
+  for (let i = 0; i < p.length; i++) {
+    crc ^= p.charCodeAt(i) << 8;
+    for (let b = 0; b < 8; b++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+  }
+  return p + crc.toString(16).toUpperCase().padStart(4, "0");
+}
+
+async function hmac(secret, data) {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data)));
+  return btoa(String.fromCharCode(...mac)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "").slice(0, 22);
+}
+
+const AMOUNT = /^\d{1,6}(\.\d{1,2})?$/;
+function payString(p) { return ["pay", p.a, p.r, p.n].join("|"); }
+
+// Read and check a payment link's fields (a = amount, r = ref, n = note, s = signature).
+async function readPayLink(get, env) {
+  const p = { a: text(get("a"), 12), r: text(get("r"), 12), n: text(get("n"), 120), s: text(get("s"), 40) };
+  if (!env.LINE_CHANNEL_SECRET || !AMOUNT.test(p.a) || !(+p.a > 0) || !/^[A-Z0-9]{4,12}$/.test(p.r)) return null;
+  const expected = await hmac(env.LINE_CHANNEL_SECRET, payString(p));
+  if (expected.length !== p.s.length) return null;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ p.s.charCodeAt(i);
+  return diff === 0 ? p : null;
+}
+
+function baht(a) { return "฿" + Number(a).toLocaleString("en-US", { minimumFractionDigits: a.includes(".") ? 2 : 0, maximumFractionDigits: 2 }); }
+
+export async function makePayLink(env, amount, note) {
+  const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  const p = { a: amount, r: Array.from(bytes, (b) => abc[b % abc.length]).join(""), n: note.slice(0, 120) };
+  p.s = await hmac(env.LINE_CHANNEL_SECRET, payString(p));
+  const q = new URLSearchParams({ a: p.a, r: p.r });
+  if (p.n) q.set("n", p.n);
+  q.set("s", p.s);
+  return { ref: p.r, url: "https://" + HOME_HOST + "/pay?" + q.toString() };
+}
+
+// "pay 1500 Cleaning 19 Nov, Khun A" → { amount: "1500", note: "..." }
+export function parsePayCommand(t) {
+  const m = /^\s*(?:pay|จ่าย|ชำระ|เก็บเงิน)(?:\s+|$)(.*)$/is.exec(t || "");
+  if (!m) return null;
+  const rest = m[1].trim();
+  const n = /^฿?\s*([\d,]+(?:\.\d{1,2})?)\s*(?:บาท|thb|baht)?(?:\s+|$)(.*)$/is.exec(rest);
+  if (!n) return { help: true };
+  const amount = n[1].replace(/,/g, "");
+  if (!AMOUNT.test(amount) || !(+amount > 0)) return { help: true };
+  return { amount: String(+amount), note: n[2].replace(/\s+/g, " ").trim() };
+}
+
+async function payReply(env, cmd) {
+  if (cmd.help) {
+    return "To make a payment link, type:\npay <amount> <what it's for>\n\nFor example:\npay 1500 Cleaning 19 Nov, Khun Somchai";
+  }
+  const link = await makePayLink(env, cmd.amount, cmd.note);
+  return "💳 Payment link · " + baht(cmd.amount) + " · Ref " + link.ref +
+    (cmd.note ? "\nFor: " + cmd.note : "") +
+    "\n\n" + link.url +
+    "\n\nSend this link to the customer. They scan the PromptPay QR, pay, and upload the slip. The slip will arrive in this group with Ref " + link.ref + "." +
+    (env.PROMPTPAY_ID ? "" : "\n\n⚠️ PROMPTPAY_ID is not set in Cloudflare yet, so the page can't show a QR code.");
+}
+
+async function handlePayInfo(url, env) {
+  const p = await readPayLink((k) => url.searchParams.get(k), env);
+  if (!p) return json(400, { ok: false, error: "This payment link isn't valid. Please ask us for a new one." });
+  const payload = promptPayPayload(env.PROMPTPAY_ID, p.a);
+  return json(200, {
+    ok: true, amount: p.a, ref: p.r, note: p.n,
+    promptpay: payload ? { payload, name: text(env.PROMPTPAY_NAME, 100) } : null,
+  });
+}
+
+async function handlePaySlip(request, env) {
+  if (request.method !== "POST") return json(405, { ok: false, error: "Use POST." });
+  if (!env.LINE_CHANNEL_ACCESS_TOKEN || !env.LINE_TO) return json(503, { ok: false, error: "Payments are not set up yet." });
+  if (Number(request.headers.get("content-length") || 0) > MAX_PHOTO_BYTES + 16 * 1024) return json(413, { ok: false, error: "The slip image is too large." });
+  let form;
+  try { form = await request.formData(); } catch { return json(400, { ok: false, error: "Invalid request." }); }
+  const p = await readPayLink((k) => (typeof form.get(k) === "string" ? form.get(k) : ""), env);
+  if (!p) return json(400, { ok: false, error: "This payment link isn't valid. Please ask us for a new one." });
+  const slip = form.get("slip");
+  if (!slip || typeof slip !== "object" || !PHOTO_TYPES.includes(slip.type) || slip.size > MAX_PHOTO_BYTES) {
+    return json(400, { ok: false, error: "Please attach the slip as a JPG or PNG under 1.5 MB." });
+  }
+  const name = text(form.get("name"), 80);
+  if (!env.PHOTOS) return json(503, { ok: false, error: "Slip uploads are not set up yet." });
+  const store = env.PHOTOS.get(env.PHOTOS.idFromName("photos"));
+  const id = crypto.randomUUID().replace(/-/g, "");
+  const put = await store.fetch("https://photos/" + id, { method: "PUT", headers: { "content-type": slip.type }, body: await slip.arrayBuffer() });
+  if (!put.ok) return json(500, { ok: false, error: "We couldn't save your slip. Please try again." });
+  const img = new URL(request.url).origin + "/api/photo/" + id + ".jpg";
+
+  const lines = ["💳 Payment slip received", "Amount: " + baht(p.a), "Ref: " + p.r];
+  if (p.n) lines.push("For: " + p.n);
+  if (name) lines.push("From: " + name);
+  lines.push("", "Please check the bank account before confirming.");
+  const messages = [{ type: "text", text: lines.join("\n") }, { type: "image", originalContentUrl: img, previewImageUrl: img }];
+  const recipients = String(env.LINE_TO).split(",").map((v) => v.trim()).filter(Boolean);
+  const results = await Promise.all(recipients.map((to) => lineApi(env, "/v2/bot/message/push", { to, messages })));
+  results.filter((r) => !r.ok).forEach((r) => console.error("LINE push failed", r.status, r.body));
+  if (!results.some((r) => r.ok)) return json(502, { ok: false, error: "We couldn't send your slip right now. Please try again." });
+  return json(200, { ok: true });
+}
+
 async function handleLineWebhook(request, env, ctx) {
   if (request.method !== "POST") return json(405, { ok: false, error: "Use POST." });
   if (!env.LINE_CHANNEL_SECRET || !env.LINE_CHANNEL_ACCESS_TOKEN) {
@@ -268,9 +397,20 @@ async function handleLineWebhook(request, env, ctx) {
   let events = [];
   try { events = JSON.parse(body).events || []; } catch { return json(400, { ok: false, error: "Invalid body." }); }
 
+  const team = String(env.LINE_TO || "").split(",").map((v) => v.trim()).filter(Boolean);
   const replies = [];
   for (const e of events) {
     if (!e.replyToken || !e.source) continue;
+    // Payment links can only be made from the team's own chats (LINE_TO).
+    const chat = e.source.groupId || e.source.roomId || e.source.userId;
+    const pay = e.type === "message" && e.message && e.message.type === "text" && team.includes(chat)
+      ? parsePayCommand(e.message.text) : null;
+    if (pay) {
+      replies.push(payReply(env, pay).then((t) => lineApi(env, "/v2/bot/message/reply", {
+        replyToken: e.replyToken, messages: [{ type: "text", text: t }],
+      })));
+      continue;
+    }
     const asked = e.type === "message" && e.message && e.message.type === "text" &&
       /^\s*(id|groupid|group id|chat id|ไอดี)\s*$/i.test(e.message.text);
     if (e.type === "join" || asked) {
@@ -297,6 +437,8 @@ export default {
     if (url.pathname === "/api/booking") return handleBooking(request, env);
     if (url.pathname === "/api/line-webhook") return handleLineWebhook(request, env, ctx);
     if (url.pathname === "/api/route") return handleRoute(url);
+    if (url.pathname === "/api/pay") return handlePayInfo(url, env);
+    if (url.pathname === "/api/pay/slip") return handlePaySlip(request, env);
     const photo = url.pathname.match(/^\/api\/photo\/([a-f0-9]{32})\.jpg$/);
     if (photo) {
       if (!env.PHOTOS || !["GET", "HEAD"].includes(request.method)) return new Response("Not found", { status: 404 });

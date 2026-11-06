@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Payment — YourestWedo</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0f2a2a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f2a2a'/%3E%3Ctext x='32' y='43' font-family='Georgia,serif' font-size='30' text-anchor='middle' fill='%23d8b56a'%3EYW%3C/text%3E%3C/svg%3E">
+</head>
+<body class="pay-page">
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a class="brand" href="/" aria-label="YourestWedo home">
+        <span class="brand-mark" aria-hidden="true">YW</span>
+        <span class="brand-text">
+          <span class="brand-name">YourestWedo</span>
+          <span class="brand-tag">CHOWREST</span>
+        </span>
+      </a>
+    </div>
+  </header>
+
+  <main id="main" class="section section-dark pay-main">
+    <div class="container pay-wrap">
+      <div class="book-success pay-card" id="pay-card">
+        <p class="eyebrow">Payment · ชำระเงิน</p>
+        <h1 class="pay-amount" id="pay-amount">Loading…</h1>
+        <dl class="pay-meta" id="pay-meta" hidden>
+          <dt>Ref</dt><dd id="pay-ref"></dd>
+          <dt id="pay-note-label" hidden>For</dt><dd id="pay-note" hidden></dd>
+          <dt id="pay-name-label" hidden>Pay to</dt><dd id="pay-name" hidden></dd>
+        </dl>
+        <p class="form-status" id="pay-error" role="alert" hidden></p>
+
+        <section id="pay-qr-box" hidden>
+          <div class="pay-qr">
+            <p class="pay-pp">Thai QR · PromptPay</p>
+            <canvas id="pay-qr" width="300" height="300" role="img" aria-label="PromptPay QR code for this payment"></canvas>
+          </div>
+          <a class="btn btn-gold btn-block" id="pay-save" download="YourestWedo-payment.png">Save QR image · บันทึกรูป QR</a>
+          <ol class="pay-steps">
+            <li>Open your bank app and scan this QR, or save the image and choose it from your photos. <span lang="th">สแกน QR ด้วยแอปธนาคาร หรือบันทึกรูปแล้วเลือกจากอัลบั้ม</span></li>
+            <li>Check the amount and name, then pay. <span lang="th">ตรวจสอบยอดและชื่อบัญชี แล้วกดชำระ</span></li>
+            <li>Upload your slip below so we can confirm. <span lang="th">แนบสลิปด้านล่างเพื่อยืนยันการชำระ</span></li>
+          </ol>
+        </section>
+
+        <form id="slip-form" class="slip-form" hidden novalidate>
+          <h2 class="pay-h2">Upload your slip · แนบสลิป</h2>
+          <div class="field">
+            <label for="slip-name">Your name · ชื่อผู้โอน</label>
+            <input id="slip-name" name="name" autocomplete="name" maxlength="80">
+          </div>
+          <div class="field">
+            <label for="slip-file">Payment slip · สลิป <span class="req" aria-hidden="true">*</span></label>
+            <input id="slip-file" name="slip" type="file" accept="image/*" required>
+            <p class="field-error" id="slip-error" hidden>Please choose a photo of your slip.</p>
+          </div>
+          <button type="submit" class="btn btn-gold btn-block" id="slip-submit">Send slip · ส่งสลิป</button>
+        </form>
+
+        <div id="slip-done" hidden tabindex="-1">
+          <h2 class="pay-h2">Thank you — slip received.</h2>
+          <p>We'll check the payment and confirm with you shortly. <span lang="th">ได้รับสลิปแล้ว เราจะตรวจสอบและยืนยันกับคุณโดยเร็ว</span></p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" integrity="sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1" crossorigin="anonymous"></script>
+  <script src="pay.js"></script>
+</body>
+</html>

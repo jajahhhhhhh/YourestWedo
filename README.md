@@ -82,6 +82,20 @@ Typing `id` in a one-to-one chat with the Official Account replies with that per
 
 Add each value with type **Secret** (Encrypt), not Text. `keep_vars` in `wrangler.jsonc` also stops deploys from clearing Text variables, but Secrets keep the token hidden in the dashboard. Until both are set, the form shows "we couldn't send your request".
 
+### Payments (PromptPay)
+
+The team asks for payment after the admin confirms the price.
+
+1. In Cloudflare (Workers & Pages → yourestwedo → Settings → Variables and Secrets) add:
+   - `PROMPTPAY_ID`: the company's PromptPay mobile number or 13-digit tax ID.
+   - `PROMPTPAY_NAME`: the account name customers should see, e.g. `YourestWedo Co.,Ltd.`
+2. In the LINE group (or any chat in `LINE_TO`), type `pay <amount> <what it's for>`, e.g. `pay 1500 Cleaning 19 Nov, Khun Somchai`. Thai also works: `จ่าย 1500 …`.
+3. The bot replies with a payment link and a reference code. Send the link to the customer.
+4. The customer's page shows a PromptPay QR for exactly that amount. They pay in their bank app and upload the slip.
+5. The slip arrives in the group with the amount and reference. Check the bank account before confirming. The website does not verify payments by itself.
+
+Links are signed with `LINE_CHANNEL_SECRET`, so the amount can't be changed in the address bar. Card payments through a payment gateway (Stripe or Opn/Omise) can be added once the merchant account is approved.
+
 ## Before going live
 
 - **Keep booked days up to date.** Each service's fully booked days are listed in `BOOKED` in `script.js`; they are not synced with Google Calendar.
