@@ -71,6 +71,7 @@ export function readBooking(input) {
     time: text(b.time, 40),
     notes: text(b.notes, 1000),
     page: text(b.page, 200),
+    route: services.includes("chauffeur") ? text(b.route, 400) : "",
     cleaning: null,
   };
   if (services.includes("cleaning")) {
@@ -128,6 +129,7 @@ export function bookingMessage(b) {
   }
   lines.push("Address: " + (b.address || "Current location (pinned on map)"));
   lines.push("Map: " + map);
+  if (b.route) lines.push("Route: " + b.route);
   if (b.notes) lines.push("", "Details: " + b.notes);
   if (b.page) lines.push("", "Sent from: " + b.page);
   return lines.join("\n").slice(0, 4900);
