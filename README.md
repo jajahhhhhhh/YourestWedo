@@ -96,6 +96,31 @@ The team asks for payment after the admin confirms the price.
 
 Links are signed with `LINE_CHANNEL_SECRET`, so the amount can't be changed in the address bar. Card payments through a payment gateway (Stripe or Opn/Omise) can be added once the merchant account is approved.
 
+### Jobs: dispatch and records (LINE groups + Google Sheet)
+
+Three LINE groups, each with the bot in it:
+
+| Group | Cloudflare variable | Gets |
+| --- | --- | --- |
+| Admin | `LINE_TO` | bookings, job cards, payment links and slips, "assigned" / "done" / "problem" alerts |
+| Maids | `LINE_TEAM_MAIDS` | cleaning jobs |
+| Drivers | `LINE_TEAM_DRIVERS` | chauffeur & errands, grocery and car wash jobs |
+
+When the bot joins a group it replies with the group's ID.
+
+How a job moves:
+
+1. A booking arrives in the admin group as job `J-1001` with buttons **ส่งงานให้ทีม** (send to team) and **ยกเลิกงาน** (cancel).
+2. To ask for payment, the admin types `pay 1500 J-1001 …`. The slip is matched to the job automatically.
+3. **ส่งงานให้ทีม** posts the job to the team group without the customer's phone number.
+4. The team leader types `มอบ J-1001` and tags the person (`@name`). The bot replies with the full details and buttons: on the way, started, done, problem.
+5. Photos that person sends in the team group are saved to their current job, including after photos up to 3 hours after "done".
+6. Type `งาน J-1001` in any of the groups to see the job's status.
+
+Each change updates one row per job in the Google Sheet. Photos and slips are copied to Google Drive (`YourestWedo job photos/J-1001`). To connect the sheet, follow the steps at the top of `tools/job-sheet.gs`, then add `SHEET_URL` and `SHEET_SECRET` in Cloudflare as Secrets.
+
+LINE counts each message the bot pushes to a group once per member, but replies to button taps and commands are free. On the free plan, keep groups small, or move to a paid plan when jobs grow.
+
 ## Before going live
 
 - **Keep booked days up to date.** Each service's fully booked days are listed in `BOOKED` in `script.js`; they are not synced with Google Calendar.
