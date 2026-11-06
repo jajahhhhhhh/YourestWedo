@@ -303,7 +303,7 @@
   }
 
   // Errand route: when "Chauffeur & errands" is ticked, show a map to pin
-  // pickup and drop-off and price it at ฿200 + ฿12/km (see errand-calc.js).
+  // pickup and drop-off and price it at ฿200 + ฿12/km, minimum ฿300 (see errand-calc.js).
   var routeBox = document.getElementById("route-details");
   var routeCalc = null;
   function isChauffeurSelected() {

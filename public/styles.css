@@ -533,3 +533,4 @@ textarea { resize: vertical; }
 .calc.calc-form .calc-map { min-height: 280px; }
 .calc.calc-form .calc-panel { padding: 16px; }
 .calc.calc-form .calc-price { font-size: 1.6rem; }
+.calc-min { margin: -6px 0 0; font-size: .85rem; color: var(--muted); }
