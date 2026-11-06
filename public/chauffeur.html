@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f2a2a'/%3E%3Ctext x='32' y='43' font-family='Georgia,serif' font-size='30' text-anchor='middle' fill='%23d8b56a'%3EYW%3C/text%3E%3C/svg%3E">
 </head>
@@ -122,27 +123,55 @@
           <h2>Your hands and feet around town</h2>
           <p>Can't get away? Send us instead. Our drivers pick things up, buy what you need, deliver documents and check on places for you, and send photos so you know it's done.</p>
         </header>
+        <div class="calc">
+          <div class="calc-map" id="calc-map" role="application" aria-label="Map for choosing pickup and drop-off points"></div>
+          <div class="calc-panel">
+            <p class="trip-label">Price calculator</p>
+            <p class="calc-rate">฿200 service + ฿12 per km</p>
+            <div class="calc-modes" role="group" aria-label="Which point to set">
+              <button type="button" class="calc-mode" data-calc-mode="pickup" aria-pressed="true"><span class="calc-dot pickup">A</span> Pickup</button>
+              <button type="button" class="calc-mode" data-calc-mode="drop" aria-pressed="false"><span class="calc-dot drop">B</span> Drop-off</button>
+            </div>
+            <div class="calc-search">
+              <label for="calc-search" class="sr-only">Search for a place</label>
+              <input id="calc-search" type="search" placeholder="Search a place, e.g. Chaweng Beach" autocomplete="off">
+              <button type="button" id="calc-search-btn">Search</button>
+            </div>
+            <button type="button" class="loc-btn calc-locate" id="calc-locate">Use my location as pickup</button>
+            <dl class="calc-points">
+              <dt>A Pickup</dt><dd id="calc-pickup">Not set</dd>
+              <dt>B Drop-off</dt><dd id="calc-drop">Not set</dd>
+            </dl>
+            <p class="calc-status" id="calc-status" role="status" aria-live="polite"></p>
+            <div class="calc-result" id="calc-result" hidden>
+              <span class="calc-distance" id="calc-distance"></span>
+              <span class="calc-price" id="calc-price"></span>
+            </div>
+            <button type="button" class="btn btn-gold btn-block" id="calc-book" disabled>Book this errand</button>
+          </div>
+        </div>
         <div class="price-wrap">
           <table class="price-table">
-            <caption class="sr-only">Example errand prices in Thai baht</caption>
+            <caption class="sr-only">Errands we run</caption>
             <thead>
-              <tr><th scope="col">Errand</th><th scope="col">Example from a recent job</th><th scope="col" class="num">Price</th></tr>
+              <tr><th scope="col">Errand</th><th scope="col">Example from a recent job</th></tr>
             </thead>
             <tbody>
-              <tr><th scope="row">Deliver documents</th><td>Collect papers and drop them at an office</td><td class="num">฿300</td></tr>
-              <tr><th scope="row">Pick up food or small items</th><td>Collect a meal and bring it to a resort</td><td class="num">฿300</td></tr>
-              <tr><th scope="row">Buy and deliver</th><td>Buy a computer monitor and cable, deliver to your door</td><td class="num">฿400</td></tr>
-              <tr><th scope="row">Store pick-up</th><td>Collect a home-store order and bring it home</td><td class="num">฿400–500</td></tr>
-              <tr><th scope="row">Take someone there</th><td>Drop a cleaner at a villa, or collect them after</td><td class="num">฿400 per trip</td></tr>
-              <tr><th scope="row">Site check</th><td>Visit a property, check the keys and work done, send photos</td><td class="num">฿600</td></tr>
-              <tr><th scope="row">Moving help</th><td>Load, move and unload furniture and boxes</td><td class="num">฿400 per hour</td></tr>
+              <tr><th scope="row">Deliver documents</th><td>Collect papers and drop them at an office</td></tr>
+              <tr><th scope="row">Pick up food or small items</th><td>Collect a meal and bring it to a resort</td></tr>
+              <tr><th scope="row">Buy and deliver</th><td>Buy a computer monitor and cable, deliver to your door</td></tr>
+              <tr><th scope="row">Store pick-up</th><td>Collect a home-store order and bring it home</td></tr>
+              <tr><th scope="row">Take someone there</th><td>Drop a cleaner at a villa, or collect them after</td></tr>
+              <tr><th scope="row">Site check</th><td>Visit a property, check the keys and work done, send photos</td></tr>
+              <tr><th scope="row">Moving help</th><td>Load, move and unload furniture and boxes</td></tr>
             </tbody>
           </table>
           <div class="price-notes">
             <h3>How errands work</h3>
             <ul class="ticks">
               <li>Tell us what you need, where to pick up and where to drop off. Add photos or a shopping list in the booking form.</li>
-              <li>We confirm the price before we go. It depends on distance and time.</li>
+              <li>Price: ฿200 service + ฿12 per km from pickup to drop-off. Use the calculator above for an estimate; we confirm the final price before we go.</li>
+              <li>Moving help is charged by the hour: ฿400 per hour.</li>
               <li>You get updates and photos on LINE: on the way, picked up, delivered.</li>
               <li>For items we buy for you, you pay the receipt amount plus the errand price.</li>
               <li>Long waits or a trip cancelled after the driver has set off may cost ฿100–250.</li>
@@ -405,6 +434,8 @@
     </div>
   </footer>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="errand-calc.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
