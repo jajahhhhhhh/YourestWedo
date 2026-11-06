@@ -534,3 +534,22 @@ textarea { resize: vertical; }
 .calc.calc-form .calc-panel { padding: 16px; }
 .calc.calc-form .calc-price { font-size: 1.6rem; }
 .calc-min { margin: -6px 0 0; font-size: .85rem; color: var(--muted); }
+
+/* Payment page */
+.pay-main { min-height: calc(100vh - 72px); padding-top: clamp(32px, 6vw, 64px); }
+.pay-wrap { max-width: 520px; }
+.pay-card .eyebrow { margin-bottom: 4px; }
+.pay-amount { font-size: clamp(2.6rem, 9vw, 3.4rem); margin: 0 0 12px; font-variant-numeric: tabular-nums; }
+.pay-meta { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0 0 20px; font-size: .95rem; }
+.pay-meta dt { color: var(--muted); }
+.pay-meta dd { margin: 0; overflow-wrap: anywhere; }
+.pay-qr { border: 1px solid var(--line); border-radius: 16px; padding: 16px; text-align: center; margin-bottom: 14px; background: #fff; }
+.pay-pp { margin: 0 0 8px; font-weight: 600; color: #113566; letter-spacing: .02em; }
+.pay-qr canvas { width: min(280px, 100%); height: auto; margin: 0 auto; image-rendering: pixelated; }
+.pay-steps { margin: 18px 0 24px; padding-left: 1.2em; font-size: .92rem; }
+.pay-steps li { margin-bottom: 8px; }
+.pay-steps [lang="th"] { display: block; color: var(--muted); font-size: .88rem; }
+.pay-card .pay-h2 { color: var(--ink); font-size: 1.5rem; margin: 8px 0 14px; }
+.slip-form { border-top: 1px solid var(--line); padding-top: 18px; }
+.slip-form input[type="file"] { padding: 10px; background: var(--bg); }
+#slip-done p [lang="th"] { display: block; color: var(--muted); margin-top: 6px; }
