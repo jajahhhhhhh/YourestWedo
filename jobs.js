@@ -375,6 +375,7 @@ export async function onPostback(env, e, role, ctx) {
   if (action === "send" || action === "cancel") {
     if (!role.admin) return true;
     if (action === "cancel") {
+      if (job.status === "cancelled") { await reply(env, e.replyToken, [t(job.id + " ถูกยกเลิกไปแล้ว")]); return true; }
       const wasSent = job.status !== "new";
       job.status = "cancelled"; job.log.push({ at: now, by: who, what: "cancelled" });
       await s.save(job);
@@ -485,7 +486,7 @@ export async function onText(env, e, role, ctx) {
     if (job.status === "cancelled") { await reply(env, e.replyToken, [t(id + " ถูกยกเลิกแล้ว")]); return true; }
     const mentioned = ((e.message.mention && e.message.mention.mentionees) || []).filter((m) => m.type !== "all");
     let people = await Promise.all(mentioned.map(async (m) => ({
-      id: m.userId || "", name: m.userId ? await nameOf(env, e.source, m.userId) : text.substr(m.index + 1, m.length - 1),
+      id: m.userId || "", name: m.userId ? await nameOf(env, e.source, m.userId) : mentionName(text, m),
     })));
     if (!people.length) {
       const after = text.replace(/^\s*\S+\s+J-?\d+\s*/i, "").trim();
@@ -508,6 +509,19 @@ export async function onText(env, e, role, ctx) {
     return true;
   }
   return false;
+}
+
+// Name of a tagged person, from the message text (used when LINE doesn't
+// give their user ID because they haven't added the bot as a friend).
+// LINE's index/length cover "@Name"; read the whole word around it so a
+// small offset can't cut the name short.
+export function mentionName(text, m) {
+  let start = Math.max(0, Math.min(m.index, text.length));
+  while (start > 0 && text[start - 1] !== "@" && !/\s/.test(text[start - 1])) start--;
+  if (start > 0 && text[start - 1] === "@") start--;
+  let end = Math.min(text.length, m.index + m.length);
+  while (end < text.length && !/\s/.test(text[end])) end++;
+  return text.slice(start, end).replace(/^@/, "").trim().slice(0, 60) || "ไม่ทราบชื่อ";
 }
 
 // Photos in a team group go to the sender's current job.
