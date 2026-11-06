@@ -631,3 +631,59 @@
     form.querySelector('input[name="service"]').focus();
   });
 })();
+
+// Work gallery (cleaning page): each job card opens its photos in a viewer.
+(function () {
+  "use strict";
+  var dialog = document.getElementById("work-viewer");
+  if (!dialog || typeof dialog.showModal !== "function") return;
+  var img = dialog.querySelector(".viewer-img");
+  var caption = dialog.querySelector(".viewer-caption");
+  var counter = dialog.querySelector(".viewer-count");
+  var photos = [], index = 0, title = "", opener = null;
+
+  function show(i) {
+    index = (i + photos.length) % photos.length;
+    img.src = photos[index];
+    img.alt = title + ", photo " + (index + 1) + " of " + photos.length;
+    counter.textContent = (index + 1) + " / " + photos.length;
+    // Warm the next photo so paging feels instant.
+    var next = new Image();
+    next.src = photos[(index + 1) % photos.length];
+  }
+
+  document.querySelectorAll("[data-work-photos]").forEach(function (card) {
+    card.addEventListener("click", function (e) {
+      e.preventDefault();
+      opener = card;
+      photos = card.getAttribute("data-work-photos").split("|");
+      title = card.getAttribute("data-work-title");
+      caption.textContent = title;
+      show(0);
+      dialog.showModal();
+    });
+  });
+
+  dialog.querySelector(".viewer-prev").addEventListener("click", function () { show(index - 1); });
+  dialog.querySelector(".viewer-next").addEventListener("click", function () { show(index + 1); });
+  dialog.querySelector(".viewer-close").addEventListener("click", function () { dialog.close(); });
+  dialog.addEventListener("click", function (e) { if (e.target === dialog) dialog.close(); });
+  dialog.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowLeft") { e.preventDefault(); show(index - 1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); show(index + 1); }
+  });
+  dialog.addEventListener("close", function () {
+    img.removeAttribute("src");
+    if (opener) opener.focus();
+  });
+
+  // Swipe left/right on phones.
+  var startX = null;
+  img.addEventListener("touchstart", function (e) { startX = e.touches[0].clientX; }, { passive: true });
+  img.addEventListener("touchend", function (e) {
+    if (startX === null) return;
+    var dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 40) show(index + (dx < 0 ? 1 : -1));
+    startX = null;
+  });
+})();
