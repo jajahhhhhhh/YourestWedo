@@ -107,15 +107,65 @@ export function sheetRow(j) {
   };
 }
 
+// "sheet test" in the admin group: call the sheet script with no job and
+// explain what came back, so setup problems can be fixed without logs.
+export async function sheetTest(env) {
+  const lines = ["🧪 Google Sheet test"];
+  if (!env.SHEET_URL || !env.SHEET_SECRET) {
+    if (!env.SHEET_URL) lines.push("❌ SHEET_URL is empty in Cloudflare.");
+    if (!env.SHEET_SECRET) lines.push("❌ SHEET_SECRET is empty in Cloudflare.");
+    lines.push("Add it, then press Deploy in Cloudflare.");
+    return lines.join("\n");
+  }
+  const url = String(env.SHEET_URL).trim();
+  lines.push("URL: " + url.slice(0, 45) + "…" + url.slice(-12));
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(url)) {
+    lines.push("⚠️ The URL should look like https://script.google.com/macros/s/…/exec (Deploy → Manage deployments → Web app URL).");
+  }
+  let status = 0, type = "", body = "";
+  try {
+    const res = await fetch(url, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ secret: String(env.SHEET_SECRET).trim(), job: null }),
+    });
+    status = res.status; type = res.headers.get("content-type") || ""; body = (await res.text()).slice(0, 2000);
+  } catch (e) {
+    lines.push("❌ Could not reach the URL: " + String(e).slice(0, 200));
+    return lines.join("\n");
+  }
+  let data = null;
+  try { data = JSON.parse(body); } catch { /* not JSON */ }
+  lines.push("Answer: HTTP " + status + (type ? " · " + type.split(";")[0] : ""));
+  if (data && data.error === "bad job") {
+    lines.push("✅ Connected. The script accepted the secret, so new jobs will be written to the sheet.");
+  } else if (data && data.error === "bad secret") {
+    lines.push("❌ The script is reachable but the secret doesn't match. SHEET_SECRET in Cloudflare must be exactly the same as SECRET in Apps Script (Project Settings → Script Properties), with no spaces.");
+  } else if (data) {
+    lines.push("⚠️ Unexpected answer: " + body.slice(0, 200));
+  } else if (/accounts\.google\.com|ServiceLogin|Sign in/i.test(body)) {
+    lines.push("❌ Google asked for a sign-in. In Apps Script: Deploy → Manage deployments → edit → Who has access: Anyone, Execute as: Me → Deploy.");
+  } else if (/doPost|Script function not found/i.test(body)) {
+    lines.push("❌ The deployment has no doPost. Paste tools/job-sheet.gs into Apps Script, Save, then Deploy → Manage deployments → edit → Version: New version → Deploy.");
+  } else if (status === 404 || /not found|ไม่พบ/i.test(body)) {
+    lines.push("❌ Google says this URL doesn't exist. Copy the Web app URL again from Deploy → Manage deployments.");
+  } else {
+    const text = body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    lines.push("❌ The script answered with a web page, not data: " + text.slice(0, 220));
+  }
+  return lines.join("\n");
+}
+
 export async function syncSheet(env, job) {
   if (!env.SHEET_URL || !env.SHEET_SECRET || !job) return;
+  const url = String(env.SHEET_URL).trim();
   try {
-    const res = await fetch(env.SHEET_URL, {
+    const res = await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ secret: env.SHEET_SECRET, job: sheetRow(job) }),
+      body: JSON.stringify({ secret: String(env.SHEET_SECRET).trim(), job: sheetRow(job) }),
     });
-    if (!res.ok) console.error("Sheet sync failed", res.status, (await res.text()).slice(0, 200));
+    const body = (await res.text()).slice(0, 300);
+    if (!res.ok || !/"ok"\s*:\s*true/.test(body)) console.error("Sheet sync failed", res.status, body);
   } catch (e) { console.error("Sheet sync failed", String(e)); }
 }
 

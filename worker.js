@@ -38,7 +38,7 @@
 // in the PhotoStore Durable Object and served from /api/photo/<id>.jpg so
 // LINE can show them as images.
 
-import { JobStore, createJob, adminCard, linkPayment, slipReceived, syncSheet, onPostback, onText, onImage, teamOfChat, jobIdIn, ids } from "./jobs.js";
+import { JobStore, createJob, adminCard, linkPayment, slipReceived, syncSheet, sheetTest, onPostback, onText, onImage, teamOfChat, jobIdIn, ids } from "./jobs.js";
 export { JobStore };
 
 const MAIN_DOMAIN = "chowrest-property.com";
@@ -459,6 +459,12 @@ async function handleLineWebhook(request, env, ctx) {
         : msg && msg.type === "image" ? onImage(env, e, role, ctx, savePhoto)
         : null;
       if (job && (await job.catch((err) => { console.error("Job event failed", String(err)); return false; }))) continue;
+    }
+    if (role === "admin" && msg && msg.type === "text" && /^\s*sheet\s*test\s*$/i.test(msg.text)) {
+      replies.push(sheetTest(env).then((t) => lineApi(env, "/v2/bot/message/reply", {
+        replyToken: e.replyToken, messages: [{ type: "text", text: t }],
+      })));
+      continue;
     }
     const pay = role === "admin" && msg && msg.type === "text" ? parsePayCommand(msg.text) : null;
     if (pay) {
