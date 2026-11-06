@@ -82,6 +82,14 @@ export class JobStore extends DurableObject {
     return job;
   }
   async setActive(userId, id) { await this.ctx.storage.put("active:" + userId, id); }
+  // Payments: one record per payment link (ref), and every slip QR seen.
+  async getPay(ref) { return (await this.ctx.storage.get("pay:" + ref)) || null; }
+  async savePay(rec) { await this.ctx.storage.put("pay:" + rec.ref, rec); return rec; }
+  async slipSeen(qr, ref) {
+    const prev = (await this.ctx.storage.get("slipqr:" + qr)) || null;
+    if (!prev) await this.ctx.storage.put("slipqr:" + qr, { ref, at: Date.now() });
+    return prev;
+  }
 }
 
 // ---- Google Sheet ----------------------------------------------------------
@@ -104,7 +112,7 @@ export function sheetRow(j) {
     teams: j.teams.map((t) => TEAM_LABEL[t]).join(", "),
     assignee: j.assignees.map((a) => a.name).join(", "),
     assigned: t("assigned"), travel: t("travel"), started: t("started"), done: t("done"),
-    price: j.price, payRef: asText(j.payRef), paid: j.paidAt ? bkk(j.paidAt) : "",
+    price: j.price, payRef: asText(j.payRef), paid: (j.paidAt ? "สลิป " + bkk(j.paidAt) : "") + (j.payCheck ? (j.payCheck.ok ? " · ✅ เงินเข้า" : " · ❌ ไม่พบยอด") + " (" + j.payCheck.by + " " + bkk(j.payCheck.at) + ")" : j.paidAt ? " · รอตรวจ" : ""),
     photos: j.photos.map((p) => p.url),
     slips: j.slips,
     log: j.log.map((l) => bkk(l.at) + " " + l.by + ": " + l.what).join("\n"),
@@ -244,7 +252,7 @@ export function jobSummary(job) {
     job.services.map((s) => SERVICE_TH[s]).join(", ") + " · " + job.date,
     "ลูกค้า: " + job.name + " · " + job.phone,
     "ผู้รับงาน: " + (job.assignees.map((a) => a.name).join(", ") || "ยังไม่มอบหมาย"),
-    "ชำระเงิน: " + (job.paidAt ? "ได้รับสลิปแล้ว " + bkk(job.paidAt) : job.payRef ? "รอสลิป (Ref " + job.payRef + ")" : "ยังไม่ส่งลิงก์"),
+    "ชำระเงิน: " + payText(job),
     "รูป: " + job.photos.length,
   ];
   for (const k of ["assigned", "travel", "started", "done"]) if (job.times[k]) lines.push(STATUS_TH[k] + ": " + bkk(job.times[k]));
@@ -310,14 +318,45 @@ export async function linkPayment(env, jobId, ref, amount) {
   return s.save(job);
 }
 
-export async function slipReceived(env, ref, slipUrl) {
-  if (!env.JOBS) return null;
+// A customer uploaded a slip for payment link `ref`. Keeps a payment record
+// (pending until an admin confirms), flags a slip QR that was used before,
+// and attaches the slip to the job if the link was made for one.
+export async function recordSlip(env, { ref, amount, note, url, qr, name }) {
+  if (!env.JOBS) return { pay: null, job: null, dup: null };
   const s = store(env);
-  const job = await s.byRef(ref);
-  if (!job) return null;
-  job.paidAt = Date.now(); job.slips.push(slipUrl);
-  job.log.push({ at: job.paidAt, by: "customer", what: "slip uploaded (Ref " + ref + ")" });
-  return s.save(job);
+  const now = Date.now();
+  const dup = qr ? await s.slipSeen(qr, ref) : null;
+  const pay = (await s.getPay(ref)) || { ref, amount, note, slips: [], status: "pending", jobId: "" };
+  pay.slips.push({ url, qr: qr || "", name: name || "", at: now, dup: dup ? dup.ref : "" });
+  if (pay.status !== "confirmed") pay.status = "pending";
+  let job = await s.byRef(ref);
+  if (job) {
+    pay.jobId = job.id;
+    job.paidAt = now; job.slips.push(url);
+    job.log.push({ at: now, by: "customer", what: "slip uploaded (Ref " + ref + ")" + (dup ? " ⚠️ duplicate of Ref " + dup.ref : "") });
+    job = await s.save(job);
+  }
+  await s.savePay(pay);
+  return { pay, job, dup };
+}
+
+export function slipCard(pay, job, dup, qrRead) {
+  const lines = [
+    job ? "งาน " + job.id + (job.name ? " · " + job.name : "") : (pay.note || "ไม่ได้ผูกกับเลขงาน"),
+    "QR บนสลิป: " + (qrRead ? "อ่านได้" : "อ่านไม่ได้ (ตรวจจากรูปแทน)"),
+  ];
+  if (dup && dup.ref === pay.ref) lines.push("ℹ️ ลูกค้าส่งสลิปใบเดิมซ้ำในลิงก์เดียวกัน (ครั้งแรก " + bkk(dup.at) + ")");
+  else if (dup) lines.push("⚠️ สลิปนี้เคยใช้กับอีกรายการแล้ว (Ref " + dup.ref + ", " + bkk(dup.at) + ") อาจเป็นสลิปซ้ำ");
+  lines.push("เช็กยอดในแอปธนาคารก่อนกดยืนยัน");
+  return card("💳 สลิป ฿" + Number(pay.amount).toLocaleString("en-US") + " · Ref " + pay.ref, lines,
+    [button("✅ เงินเข้าแล้ว", "job=payok&id=" + pay.ref, "ยืนยันเงินเข้า Ref " + pay.ref, "primary"),
+      button("❌ ไม่พบยอด", "job=paybad&id=" + pay.ref, "ไม่พบยอด Ref " + pay.ref)]);
+}
+
+function payText(job) {
+  if (job.payCheck) return job.payCheck.ok ? "✅ เงินเข้าแล้ว (" + job.payCheck.by + " " + bkk(job.payCheck.at) + ")" : "❌ ไม่พบยอด (" + job.payCheck.by + " " + bkk(job.payCheck.at) + ")";
+  if (job.paidAt) return "ได้รับสลิปแล้ว " + bkk(job.paidAt) + " · รอตรวจยอด";
+  return job.payRef ? "รอสลิป (Ref " + job.payRef + ")" : "ยังไม่ส่งลิงก์";
 }
 
 // Button taps. role: { admin: chat is in LINE_TO, team: "maids" | "drivers" | null }.
@@ -327,6 +366,7 @@ export async function onPostback(env, e, role, ctx) {
   const action = q.get("job"), id = q.get("id");
   if (!action || !id || !env.JOBS) return false;
   const s = store(env);
+  if (action === "payok" || action === "paybad") return onPayCheck(env, e, role, ctx, s, action === "payok", id);
   const job = await s.get(id);
   if (!job) { await reply(env, e.replyToken, [t("ไม่พบงาน " + id)]); return true; }
   const who = await nameOf(env, e.source, e.source.userId);
@@ -383,12 +423,39 @@ export async function onPostback(env, e, role, ctx) {
     const tasks = [syncSheet(env, job)];
     if (action === "done" || action === "problem") {
       tasks.push(push(env, env.LINE_TO, [t((action === "done" ? "✅ " : "⚠️ ") + job.id + " " + ACTIONS[action].say + " · " + who + " · " + bkk(now) +
-        (action === "done" ? "\nรูปทั้งหมด: " + job.photos.length + " · ชำระเงิน: " + (job.paidAt ? "ได้รับสลิปแล้ว" : "ยังไม่ได้รับสลิป") : ""))]));
+        (action === "done" ? "\nรูปทั้งหมด: " + job.photos.length + " · ชำระเงิน: " + payText(job) : ""))]));
     }
     ctx.waitUntil(Promise.all(tasks));
     return true;
   }
   return false;
+}
+
+// Admin taps ✅ เงินเข้าแล้ว / ❌ ไม่พบยอด on a slip card.
+async function onPayCheck(env, e, role, ctx, s, ok, ref) {
+  if (!role.admin) return true;
+  const pay = await s.getPay(ref);
+  if (!pay) { await reply(env, e.replyToken, [t("ไม่พบการชำระ Ref " + ref)]); return true; }
+  const who = await nameOf(env, e.source, e.source.userId);
+  if (pay.status === "confirmed" && ok) {
+    await reply(env, e.replyToken, [t("Ref " + ref + " ยืนยันเงินเข้าไปแล้วโดย " + pay.by + " (" + bkk(pay.at) + ")")]);
+    return true;
+  }
+  const now = Date.now();
+  pay.status = ok ? "confirmed" : "rejected"; pay.by = who; pay.at = now;
+  await s.savePay(pay);
+  let job = pay.jobId ? await s.get(pay.jobId) : null;
+  if (job) {
+    job.payCheck = { ok, by: who, at: now };
+    job.log.push({ at: now, by: who, what: (ok ? "payment confirmed" : "payment not found") + " ฿" + pay.amount + " (Ref " + ref + ")" });
+    job = await s.save(job);
+  }
+  const amount = "฿" + Number(pay.amount).toLocaleString("en-US");
+  await reply(env, e.replyToken, [t(ok
+    ? "✅ ยืนยันเงินเข้า " + amount + " · Ref " + ref + (job ? " · " + job.id : "") + " · โดย " + who
+    : "❌ ไม่พบยอด " + amount + " · Ref " + ref + (job ? " · " + job.id : "") + " · โดย " + who + "\nแจ้งลูกค้าให้ตรวจสอบการโอน หรือส่งสลิปใหม่จากลิงก์เดิม")]);
+  if (job) ctx.waitUntil(syncSheet(env, job));
+  return true;
 }
 
 // Text commands. Returns true if handled.

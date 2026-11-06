@@ -76,6 +76,45 @@
     });
   }
 
+  // Read the small QR printed on Thai bank slips. The team uses it to spot a
+  // slip that was sent before. jsQR loads only when a slip is sent.
+  var JSQR = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
+  var JSQR_SRI = "sha384-b5Ya4Bq3qCyz39m2ISh+4DxjAIljdeFwK/BsXLuj9gugaNwAcj/ia15fxNZL9Nlx";
+  function loadJsQR() {
+    if (window.jsQR) return Promise.resolve();
+    return new Promise(function (resolve, reject) {
+      var sc = document.createElement("script");
+      sc.src = JSQR; sc.integrity = JSQR_SRI; sc.crossOrigin = "anonymous";
+      sc.onload = resolve; sc.onerror = reject;
+      document.head.appendChild(sc);
+    });
+  }
+  function readSlipQR(file) {
+    return loadJsQR().then(function () {
+      return new Promise(function (resolve) {
+        var img = new Image(), src = URL.createObjectURL(file);
+        img.onload = function () {
+          URL.revokeObjectURL(src);
+          var found = "";
+          // Try a couple of sizes: slip QR codes are small.
+          [1600, 2400, 1000].some(function (max) {
+            var scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+            var c = document.createElement("canvas");
+            c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale);
+            var ctx = c.getContext("2d");
+            ctx.drawImage(img, 0, 0, c.width, c.height);
+            var code = window.jsQR(ctx.getImageData(0, 0, c.width, c.height).data, c.width, c.height, { inversionAttempts: "attemptBoth" });
+            if (code && code.data) found = code.data;
+            return !!found;
+          });
+          resolve(found);
+        };
+        img.onerror = function () { URL.revokeObjectURL(src); resolve(""); };
+        img.src = src;
+      });
+    }).catch(function () { return ""; });
+  }
+
   var form = $("slip-form"), btn = $("slip-submit");
   form.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -84,8 +123,13 @@
     $("pay-error").hidden = true;
     if (!file) { $("slip-file").focus(); return; }
     btn.disabled = true; btn.textContent = "Sending…";
-    compress(file).then(function (blob) {
+    var slipQr = "";
+    readSlipQR(file).then(function (qr) {
+      slipQr = qr;
+      return compress(file);
+    }).then(function (blob) {
       var body = new FormData();
+      body.append("slipQr", slipQr);
       Object.keys(link).forEach(function (k) { body.append(k, link[k]); });
       body.append("name", $("slip-name").value.trim());
       body.append("slip", blob, "slip.jpg");
