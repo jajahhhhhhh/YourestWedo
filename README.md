@@ -48,6 +48,21 @@ The site deploys as the `yourestwedo` Worker (`wrangler.jsonc`). Every push to `
 
 After the first successful deploy, open the Worker → **Settings** → **Domains & Routes** → **Add** → **Custom domain**, and add each of the five addresses above. Cloudflare creates the DNS records itself.
 
+#### Seeing this project's costs on their own
+
+Cloudflare bills per **account**, not per API token or per Worker. To see exactly what YourestWedo costs, run it in a Cloudflare account that holds nothing else, and deploy with a token that can only reach that account.
+
+1. **Create a Cloudflare account just for YourestWedo**, add a payment method, and copy its **Account ID** (the 32-character code in the dashboard address, right after `dash.cloudflare.com/`).
+2. **Create a deploy token there.** My Profile → API Tokens → Create Token → **Edit Cloudflare Workers** template. Under **Account Resources**, include only the new account. If the custom domains will live in that account, add the zone under **Zone Resources** as well.
+3. **Point GitHub at it.** Repo → Settings → Secrets and variables → Actions:
+   - Secrets: replace `CLOUDFLARE_API_TOKEN` with the new token.
+   - Variables: add `CLOUDFLARE_ACCOUNT_ID` with the new account's ID. Without it, deploys go to the original account.
+4. **Re-add the Worker's settings** in the new account (Workers & Pages → yourestwedo → Settings → Variables and Secrets): `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_CHANNEL_SECRET`, `LINE_TO` and the other group IDs, `PROMPTPAY_ID`, `PROMPTPAY_NAME`, `EASYSLIP_KEY`, `SHEET_URL`, `SHEET_SECRET` and any others you set. They are not copied between accounts.
+5. **Move the domain.** A Worker's custom domains must be in the same account, so move the `chowrest-property.com` zone to the new account, then add the five custom domains to the new Worker. The zone's other DNS records, including the Chowrest property site's, move with it unchanged.
+6. **Check the LINE webhook URL** in the LINE Developers console still points at the new deployment.
+
+Durable Object data (open jobs and stored photos) stays in the old account; it is not moved. Switch over when no jobs are open, or finish them first. After the switch, the new account's **Billing** page shows only this project's costs, and Workers & Pages → yourestwedo → **Metrics** shows its requests and Durable Object usage.
+
 To test the routing locally:
 
 ```bash
