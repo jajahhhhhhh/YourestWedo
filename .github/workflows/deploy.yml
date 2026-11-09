@@ -21,5 +21,8 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # Set the CLOUDFLARE_ACCOUNT_ID repository variable to deploy to a
+          # different Cloudflare account. Falls back to the original account.
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID || 'aed56ccedac8bafaa6cc2551eea1cefe' }}
           wranglerVersion: "4"
           command: deploy
