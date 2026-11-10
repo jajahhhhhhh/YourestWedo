@@ -286,11 +286,13 @@ function chatIdReply(source, joined) {
 }
 
 // Contact buttons on every page (contact.js).
-//   WhatsApp: WHATSAPP_NUMBER (any format, e.g. +66 81 234 5678).
+//   WhatsApp: WHATSAPP_NUMBER if set (any format, e.g. +66 81 234 5678),
+//   otherwise the team's number below.
 //   LINE: LINE_ADD_URL if set, otherwise the team's public LINE account
 //   (LINE_PUBLIC_ID below). Without either, the bot's own add-friend link is
 //   looked up from the LINE API with the channel token.
 const LINE_PUBLIC_ID = "@chowrest";
+const WHATSAPP_PUBLIC = "66925791876";
 let lineAddCache = { url: "", at: 0 };
 async function lineAddUrl(env) {
   if (env.LINE_ADD_URL) return String(env.LINE_ADD_URL).trim();
@@ -309,7 +311,7 @@ async function lineAddUrl(env) {
 }
 
 async function handleContact(env) {
-  const digits = String(env.WHATSAPP_NUMBER || "").replace(/\D/g, "");
+  const digits = String(env.WHATSAPP_NUMBER || WHATSAPP_PUBLIC).replace(/\D/g, "");
   const whatsapp = digits.length >= 9 ? (digits.startsWith("0") ? "66" + digits.slice(1) : digits) : "";
   const line = await lineAddUrl(env);
   return new Response(JSON.stringify({ whatsapp, line }), {
