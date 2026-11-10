@@ -559,8 +559,13 @@ export default {
       : "";
 
     // services., workers.dev and anything else: serve files as they are.
+    // Only chowrest-property.com hosts should appear in search results.
     if (!SERVICES.includes(sub) || ASSET.test(url.pathname)) {
-      return env.ASSETS.fetch(request);
+      const res = await env.ASSETS.fetch(request);
+      if (host === MAIN_DOMAIN || host.endsWith("." + MAIN_DOMAIN)) return res;
+      const out = new Response(res.body, res);
+      out.headers.set("x-robots-tag", "noindex");
+      return out;
     }
 
     // The subdomain's home page is its service page.

@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /api/
+Disallow: /pay
+
+Sitemap: https://services.chowrest-property.com/sitemap.xml

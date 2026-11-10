@@ -575,3 +575,4 @@ textarea { resize: vertical; }
 @media (max-width: 900px) { .hg-track { grid-auto-columns: calc((100% - 16px) / 2); } }
 @media (max-width: 560px) { .hg-track { grid-auto-columns: 85%; gap: 12px; } }
 @media (prefers-reduced-motion: reduce) { .hg-slide img { transition: none; } }
+.footer-area { grid-column: 1 / -1; margin: 0; font-size: .82rem; color: #9fb2b0; }
