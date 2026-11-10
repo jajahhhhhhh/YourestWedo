@@ -586,3 +586,17 @@ textarea { resize: vertical; }
 .turnover-photos .hg-slide img { aspect-ratio: 4 / 3; border-radius: 16px; }
 .price-table .dist { text-align: right; white-space: nowrap; }
 @media (max-width: 560px) { .price-table td.dist { text-align: left; } }
+
+/* Deep cleaning page */
+.btn-ghost-dark { border: 1px solid var(--ink); color: var(--ink); background: transparent; }
+.btn-ghost-dark:hover { background: var(--ink); color: #fff; }
+.ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.ba-job h3 { margin: 0 0 12px; }
+.ba-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ba-pair figure { margin: 0; position: relative; }
+.ba-pair img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 14px; background: var(--line); }
+.ba-pair figcaption { position: absolute; left: 10px; top: 10px; padding: 3px 10px; border-radius: 999px; background: rgba(15,42,42,.85); color: #fff; font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.ba-pair figure:last-child figcaption { background: var(--gold); color: var(--ink); }
+@media (max-width: 860px) { .ba-grid { grid-template-columns: 1fr; } }
+.deep-price { max-width: 720px; margin: 0 auto; }
+.deep-price p { color: var(--muted); }
