@@ -285,6 +285,35 @@ function chatIdReply(source, joined) {
     "\n\nTo get booking requests in this chat, add this ID to LINE_TO in Cloudflare.";
 }
 
+// Contact buttons on every page (contact.js).
+//   WhatsApp: WHATSAPP_NUMBER (any format, e.g. +66 81 234 5678).
+//   LINE: LINE_ADD_URL if set, otherwise the Official Account's own add-friend
+//   link, looked up once from the LINE API with the channel token.
+let lineAddCache = { url: "", at: 0 };
+async function lineAddUrl(env) {
+  if (env.LINE_ADD_URL) return String(env.LINE_ADD_URL).trim();
+  if (!env.LINE_CHANNEL_ACCESS_TOKEN) return "";
+  if (lineAddCache.url && Date.now() - lineAddCache.at < 86400000) return lineAddCache.url;
+  try {
+    const api = env.LINE_API_URL || "https://api.line.me";
+    const res = await fetch(api + "/v2/bot/info", { headers: { authorization: "Bearer " + env.LINE_CHANNEL_ACCESS_TOKEN } });
+    if (!res.ok) return lineAddCache.url;
+    const info = await res.json();
+    const id = info.premiumId || info.basicId || "";
+    if (/^@[\w.-]+$/.test(id)) lineAddCache = { url: "https://line.me/R/ti/p/" + encodeURIComponent(id), at: Date.now() };
+  } catch (e) { console.error("LINE bot info failed", String(e)); }
+  return lineAddCache.url;
+}
+
+async function handleContact(env) {
+  const digits = String(env.WHATSAPP_NUMBER || "").replace(/\D/g, "");
+  const whatsapp = digits.length >= 9 ? (digits.startsWith("0") ? "66" + digits.slice(1) : digits) : "";
+  const line = await lineAddUrl(env);
+  return new Response(JSON.stringify({ whatsapp, line }), {
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=300" },
+  });
+}
+
 // Road distance for the errand price calculator. Proxies OSRM so the page
 // doesn't depend on a third-party server allowing browser requests.
 async function handleRoute(url) {
@@ -546,6 +575,7 @@ export default {
     if (url.pathname === "/api/booking") return handleBooking(request, env, ctx);
     if (url.pathname === "/api/line-webhook") return handleLineWebhook(request, env, ctx);
     if (url.pathname === "/api/route") return handleRoute(url);
+    if (url.pathname === "/api/contact") return handleContact(env);
     if (url.pathname === "/api/pay") return handlePayInfo(url, env);
     if (url.pathname === "/api/pay/slip") return handlePaySlip(request, env, ctx);
     const photo = url.pathname.match(/^\/api\/photo\/([a-f0-9]{32})\.jpg$/);
