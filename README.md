@@ -142,7 +142,7 @@ LINE counts each message the bot pushes to a group once per member, but replies 
 
 Every page shows floating chat buttons (contact.js, /api/contact).
 
-- **WhatsApp:** add `WHATSAPP_NUMBER` in Cloudflare (e.g. `+66 81 234 5678` or `0812345678`). The button opens a chat with a message about the page's service.
+- **WhatsApp:** +66 92 579 1876 (`WHATSAPP_PUBLIC` in worker.js). To use another number without changing code, set `WHATSAPP_NUMBER` in Cloudflare (e.g. `+66 81 234 5678` or `0812345678`). The button opens a chat with a message about the page's service.
 - **LINE:** opens @chowrest (`LINE_PUBLIC_ID` in worker.js). To use a different link without changing code, set `LINE_ADD_URL` (e.g. `https://lin.ee/xxxx`). If `LINE_PUBLIC_ID` is emptied, the bot's own account is used.
 
 A button only appears once its value is available.
