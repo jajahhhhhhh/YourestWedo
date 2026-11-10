@@ -576,3 +576,11 @@ textarea { resize: vertical; }
 @media (max-width: 560px) { .hg-track { grid-auto-columns: 85%; gap: 12px; } }
 @media (prefers-reduced-motion: reduce) { .hg-slide img { transition: none; } }
 .footer-area { grid-column: 1 / -1; margin: 0; font-size: .82rem; color: #9fb2b0; }
+
+/* Villa turnover cleaning page */
+.turnover-photos { max-width: 1140px; }
+.turnover-steps { max-width: 720px; margin: 0 auto; padding-left: 1.4em; display: grid; gap: 14px; font-size: 1.02rem; }
+.turnover-steps strong { color: var(--ink); }
+.turnover-cta { text-align: center; margin: 32px 0 0; }
+.turnover-others { text-align: center; margin-top: 28px; }
+.turnover-photos .hg-slide img { aspect-ratio: 4 / 3; border-radius: 16px; }
