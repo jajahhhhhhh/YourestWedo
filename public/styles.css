@@ -584,3 +584,5 @@ textarea { resize: vertical; }
 .turnover-cta { text-align: center; margin: 32px 0 0; }
 .turnover-others { text-align: center; margin-top: 28px; }
 .turnover-photos .hg-slide img { aspect-ratio: 4 / 3; border-radius: 16px; }
+.price-table .dist { text-align: right; white-space: nowrap; }
+@media (max-width: 560px) { .price-table td.dist { text-align: left; } }
