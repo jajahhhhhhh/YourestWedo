@@ -138,6 +138,15 @@ Each change updates one row per job in the Google Sheet. Photos and slips are co
 
 LINE counts each message the bot pushes to a group once per member, but replies to button taps and commands are free. On the free plan, keep groups small, or move to a paid plan when jobs grow.
 
+### WhatsApp and LINE buttons
+
+Every page shows floating chat buttons (contact.js, /api/contact).
+
+- **WhatsApp:** add `WHATSAPP_NUMBER` in Cloudflare (e.g. `+66 81 234 5678` or `0812345678`). The button opens a chat with a message about the page's service.
+- **LINE:** found automatically from the Official Account (LINE_CHANNEL_ACCESS_TOKEN). To use a different link, set `LINE_ADD_URL` (e.g. `https://lin.ee/xxxx`).
+
+A button only appears once its value is available.
+
 ## Before going live
 
 - **Keep booked days up to date.** Each service's fully booked days are listed in `BOOKED` in `script.js`; they are not synced with Google Calendar.
