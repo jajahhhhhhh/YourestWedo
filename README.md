@@ -147,6 +147,16 @@ Every page shows floating chat buttons (contact.js, /api/contact).
 
 A button only appears once its value is available.
 
+### Customer emails
+
+When a customer leaves an email address, the system emails them:
+
+- right after booking ("We've received your booking J-1001")
+- when the team leader assigns the job ("Booking J-1001 confirmed")
+- when a payment is confirmed, by an admin or the slip check ("Payment received")
+
+Each email is sent once per job. Emails go through a Google Apps Script web app that runs under the sending Gmail account (now chowtorest@gmail.com). Follow the steps at the top of `tools/mailer.gs`, add `MAIL_URL` and `MAIL_SECRET` in Cloudflare as Secrets, then type `mail test you@example.com` in the admin group. To switch to a company address later, deploy the same script under that account and replace the two values.
+
 ## Before going live
 
 - **Keep booked days up to date.** Each service's fully booked days are listed in `BOOKED` in `script.js`; they are not synced with Google Calendar.
