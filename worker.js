@@ -38,9 +38,10 @@
 // in the PhotoStore Durable Object and served from /api/photo/<id>.jpg so
 // LINE can show them as images.
 
-import { JobStore, createJob, adminCard, linkPayment, recordSlip, slipCard, applyPayCheck, syncSheet, sheetTest, onPostback, onText, onImage, teamOfChat, jobIdIn, ids } from "./jobs.js";
+import { JobStore, createJob, adminCard, linkPayment, recordSlip, slipCard, applyPayCheck, mailJob, syncSheet, sheetTest, onPostback, onText, onImage, teamOfChat, jobIdIn, ids } from "./jobs.js";
 export { JobStore };
 import { checkSlip } from "./slipcheck.js";
+import { sendMail, testMail } from "./mail.js";
 
 const MAIN_DOMAIN = "chowrest-property.com";
 const HOME_HOST = "services." + MAIN_DOMAIN; // YourestWedo main page
@@ -231,6 +232,7 @@ async function handleBooking(request, env, ctx) {
   if (failed.length === results.length) {
     return json(502, { ok: false, error: "We couldn't send your request right now." });
   }
+  if (job && job.email) ctx.waitUntil(mailJob(env, job, "received"));
   if (extraCard) ctx.waitUntil(Promise.all(recipients.map((to) => lineApi(env, "/v2/bot/message/push", { to, messages: [extraCard] }))));
   if (job) ctx.waitUntil(syncSheet(env, job));
   return json(200, { ok: true });
@@ -464,7 +466,7 @@ async function handlePaySlip(request, env, ctx) {
   let finalJob = job;
   if (verdict && (verdict.status === "ok" || verdict.status === "reject")) {
     try {
-      const r = await applyPayCheck(env, p.r, verdict.status === "ok", "ระบบตรวจสลิป", verdict.status === "reject" ? verdict.th : "");
+      const r = await applyPayCheck(env, p.r, verdict.status === "ok", "ระบบตรวจสลิป", verdict.status === "reject" ? verdict.th : "", ctx);
       finalJob = r.job || job;
     } catch (e) { console.error("Pay check failed", String(e)); }
   }
@@ -531,6 +533,19 @@ async function handleLineWebhook(request, env, ctx) {
         : msg && msg.type === "image" ? onImage(env, e, role, ctx, savePhoto)
         : null;
       if (job && (await job.catch((err) => { console.error("Job event failed", String(err)); return false; }))) continue;
+    }
+    const mailTest = role.admin && msg && msg.type === "text" ? /^\s*mail\s*test\s+(\S+@\S+)\s*$/i.exec(msg.text) : null;
+    if (mailTest) {
+      replies.push(sendMail(env, Object.assign({ to: mailTest[1] }, testMail())).then((r) => lineApi(env, "/v2/bot/message/reply", {
+        replyToken: e.replyToken,
+        messages: [{ type: "text", text: r.ok
+          ? "📧 Test email sent to " + mailTest[1] + (r.remaining != null ? " (emails left today: " + r.remaining + ")" : "")
+          : !env.MAIL_URL || !env.MAIL_SECRET ? "❌ MAIL_URL or MAIL_SECRET is not set in Cloudflare yet."
+          : r.error === "bad secret" ? "❌ The mail script is reachable but MAIL_SECRET doesn't match SECRET in its Script Properties."
+          : /accounts\.google\.com|ServiceLogin/i.test(r.body || "") ? "❌ Google asked for a sign-in. Deploy the mail script as Web app with Who has access: Anyone."
+          : "❌ Email not sent: " + r.error }],
+      })));
+      continue;
     }
     if (role.admin && msg && msg.type === "text" && /^\s*sheet\s*test\s*$/i.test(msg.text)) {
       replies.push(sheetTest(env).then((t) => lineApi(env, "/v2/bot/message/reply", {

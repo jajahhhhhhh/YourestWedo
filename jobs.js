@@ -13,6 +13,7 @@
 // Jobs live in the JobStore Durable Object; the sheet is the team's record.
 
 import { DurableObject } from "cloudflare:workers";
+import { sendMail, bookingReceivedMail, bookingConfirmedMail, paymentReceivedMail } from "./mail.js";
 
 export const TEAM_OF = { cleaning: "maids", carwash: "drivers", chauffeur: "drivers", grocery: "drivers" };
 const TEAM_ENV = { maids: "LINE_TEAM_MAIDS", drivers: "LINE_TEAM_DRIVERS" };
@@ -306,6 +307,24 @@ export async function createJob(env, booking) {
   });
 }
 
+// Email the customer once per kind ("received", "confirmed", "paid").
+export async function mailJob(env, job, kind, extra) {
+  if (!env.JOBS || !job || !job.email || (job.mailed && job.mailed[kind])) return null;
+  const mail = kind === "received" ? bookingReceivedMail(job)
+    : kind === "confirmed" ? bookingConfirmedMail(job)
+    : paymentReceivedMail(job, extra.amount, extra.ref);
+  const res = await sendMail(env, Object.assign({ to: job.email }, mail));
+  if (!res.ok) return res;
+  const s = store(env);
+  const fresh = await s.get(job.id);
+  if (fresh) {
+    fresh.mailed = Object.assign({}, fresh.mailed, { [kind]: Date.now() });
+    fresh.log.push({ at: Date.now(), by: "system", what: "email sent to customer: " + kind });
+    await s.save(fresh);
+  }
+  return res;
+}
+
 // "pay 1500 J-1042 …" links the payment ref to the job.
 export async function linkPayment(env, jobId, ref, amount) {
   if (!env.JOBS || !jobId) return null;
@@ -434,7 +453,7 @@ export async function onPostback(env, e, role, ctx) {
 
 // Record a payment as confirmed or rejected (by an admin or by the slip
 // check) on its payment record and on the job it belongs to.
-export async function applyPayCheck(env, ref, ok, who, note) {
+export async function applyPayCheck(env, ref, ok, who, note, ctx) {
   if (!env.JOBS) return { pay: null, job: null };
   const s = store(env);
   const pay = await s.getPay(ref);
@@ -447,6 +466,7 @@ export async function applyPayCheck(env, ref, ok, who, note) {
     job.payCheck = { ok, by: who, at: now, note: note || "" };
     job.log.push({ at: now, by: who, what: (ok ? "payment confirmed" : "payment rejected" + (note ? ": " + note : "")) + " ฿" + pay.amount + " (Ref " + ref + ")" });
     job = await s.save(job);
+    if (ok && ctx) ctx.waitUntil(mailJob(env, job, "paid", { amount: pay.amount, ref }));
   }
   return { pay, job };
 }
@@ -463,7 +483,7 @@ async function onPayCheck(env, e, role, ctx, s, ok, ref) {
     await reply(env, e.replyToken, [t("Ref " + ref + " ยืนยันเงินเข้าไปแล้วโดย " + pay.by + " (" + bkk(pay.at) + ")")]);
     return true;
   }
-  const { job } = await applyPayCheck(env, ref, ok, who, ok ? "" : "ไม่พบยอด");
+  const { job } = await applyPayCheck(env, ref, ok, who, ok ? "" : "ไม่พบยอด", ctx);
   const amount = "฿" + Number(pay.amount).toLocaleString("en-US");
   await reply(env, e.replyToken, [t(ok
     ? "✅ ยืนยันเงินเข้า " + amount + " · Ref " + ref + (job ? " · " + job.id : "") + " · โดย " + who
@@ -518,6 +538,7 @@ export async function onText(env, e, role, ctx) {
     ctx.waitUntil(Promise.all([
       push(env, env.LINE_TO, [t("👷 " + job.id + " มอบให้ " + names + " แล้ว (" + TEAM_LABEL[team] + ", โดย " + by + ")")]),
       syncSheet(env, job),
+      mailJob(env, job, "confirmed"),
     ]));
     return true;
   }
